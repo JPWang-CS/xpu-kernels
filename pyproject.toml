@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xpu-kernels"
-version = "0.1.0"
+version = "0.2.0"
 description = "Small, installable GPU and NPU kernel experiments with explicit correctness and performance checks."
 readme = "README.md"
 requires-python = ">=3.10"
-license = "Apache-2.0"
-license-files = ["LICENSE"]
+license = "Apache-2.0 AND LicenseRef-CANN-Open-Software-2.0"
+license-files = ["LICENSE", "kernels/include/xpu_kernels/mhc_post_backward/LICENSE", "third-party/deep-jit/LICENSE"]
 dependencies = ["torch", "ninja>=1.11"]
 
 [project.optional-dependencies]

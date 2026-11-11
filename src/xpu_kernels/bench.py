@@ -65,7 +65,7 @@ def _native_baseline(device: str, torch, x, weight, eps: float):
         return call, {
             "status": "available",
             "name": "torch.nn.functional.rms_norm",
-            "semantics": "PyTorch native RMSNorm; accumulation and cast order may differ from the Pangu golden.",
+            "semantics": "Native RMSNorm applies gamma before the final output cast; it does not materialize the normalized input-dtype tensor required by the Pangu contract.",
             "allocates_output": True,
         }
 
@@ -84,9 +84,30 @@ def _native_baseline(device: str, torch, x, weight, eps: float):
     return call, {
         "status": "available",
         "name": "torch_npu.npu_rms_norm",
-        "semantics": "torch_npu native RMSNorm; accumulation and cast order may differ from the Pangu golden.",
+        "semantics": "CANN native RMSNorm is checked against the fused formula with one final output cast; Pangu rounds the normalized value to input dtype before multiplying gamma.",
         "allocates_output": True,
     }
+
+
+def _native_rms_norm_reference(torch, x, weight, eps: float):
+    """Reference the fused native contract, with gamma applied before output cast."""
+    width = x.shape[-1]
+    rows = x.numel() // width
+    x32 = x.reshape(rows, width).to(torch.float32)
+    w32 = weight.to(torch.float32)
+    result = x32 * torch.rsqrt((x32 * x32).mean(dim=-1, keepdim=True) + float(eps))
+    result = (result * w32).to(dtype=x.dtype)
+    return result.reshape(x.shape)
+
+
+def _make_kernel_call(rms_norm, implementation: str, x, weight, out):
+    return lambda: rms_norm(x, weight, out=out, implementation=implementation)
+
+
+def _benchmark_out(torch, x, device: str, include_native_baseline: bool):
+    if device == "npu" and include_native_baseline:
+        return None
+    return torch.empty_like(x)
 
 
 def run_benchmark(
@@ -107,6 +128,8 @@ def run_benchmark(
 
     if batches < 1 or iterations_per_batch < 1 or warmup < 0:
         raise ValueError("batches and iterations_per_batch must be positive; warmup must be non-negative")
+    if include_native_baseline and not check_correctness:
+        raise ValueError("native comparison requires correctness checks before timing")
     allowed = ("cuda", "triton", "torch") if device == "cuda" else ("ascendc",)
     selected = allowed if implementations is None else implementations
     if not selected or len(set(selected)) != len(selected) or any(x not in allowed for x in selected):
@@ -142,34 +165,57 @@ def run_benchmark(
                 torch.manual_seed(20261111 + row_count + width)
                 x = torch.randn(row_count, width, device=device, dtype=dtype)
                 weight = torch.randn(width, device=device, dtype=dtype)
-                expected = rms_norm_golden(x, weight) if check_correctness else None
+                expected = rms_norm_golden(x, weight, eps=1e-5) if check_correctness else None
                 rtol, atol = _tolerances(torch, dtype)
+                cases = []
+                native_info = {"status": "not_requested"}
                 for implementation in selected:
-                    out = torch.empty_like(x)
+                    allocate_output_per_call = include_native_baseline and device == "npu"
+                    out = _benchmark_out(torch, x, device, include_native_baseline)
                     if implementation == "torch":
                         op = make_cuda_composed(x, weight, out)
                     else:
-                        op = lambda: rms_norm(x, weight, out=out, implementation=implementation)
+                        op = _make_kernel_call(rms_norm, implementation, x, weight, out)
                     max_abs = None
                     if check_correctness:
                         actual = op()
                         stream.synchronize()
                         torch.testing.assert_close(actual, expected, rtol=rtol, atol=atol)
                         max_abs = (actual.float()-expected.float()).abs().max().item()
+                    cases.append((implementation, op, max_abs, {
+                        "strategy": "out_none_per_call" if allocate_output_per_call else "preallocated_out",
+                        "api_call": "rms_norm(out=None)" if allocate_output_per_call else "rms_norm(out=preallocated)",
+                        "event_timing_note": (
+                            "torch.npu.Event measures device-stream elapsed time; CPU submission gaps may appear in the interval, "
+                            "and host output-allocation time is not isolated."
+                            if device == "npu" else
+                            "torch.cuda.Event measures device-stream elapsed time; host output-allocation time is not isolated."
+                        ),
+                    }, "xpu_kernels.golden.rms_norm_golden"))
+                if include_native_baseline:
+                    native_call, native_info = _native_baseline(device, torch, x, weight, 1e-5)
+                    if native_call is not None:
+                        native_result = native_call()
+                        stream.synchronize()
+                        native_expected = _native_rms_norm_reference(torch, x, weight, 1e-5)
+                        torch.testing.assert_close(native_result, native_expected, rtol=rtol, atol=atol)
+                        native_max_abs = (native_result.float()-native_expected.float()).abs().max().item()
+                        cases.append(("native", native_call, native_max_abs, {
+                            "strategy": "operator_allocates_output_per_call",
+                            "api_call": native_info["name"],
+                            "event_timing_note": (
+                                "torch.npu.Event measures device-stream elapsed time; CPU submission gaps may appear in the interval, "
+                                "and host output-allocation time is not isolated."
+                                if device == "npu" else
+                                "torch.cuda.Event measures device-stream elapsed time; host output-allocation time is not isolated."
+                            ),
+                        }, "xpu_kernels.bench._native_rms_norm_reference"))
+                # Correctness for every implementation is completed before any timed samples are collected.
+                for implementation, op, max_abs, output_allocation, correctness_reference in cases:
                     samples = _event_samples(op, device_module, stream, warmup, batches, iterations_per_batch)
-                    native_info = {"status": "not_requested"}
-                    if include_native_baseline:
-                        native_call, native_info = _native_baseline(device, torch, x, weight, 1e-5)
-                        if native_call is not None:
-                            native_result = native_call()
-                            stream.synchronize()
-                            if expected is not None:
-                                torch.testing.assert_close(native_result, expected, rtol=rtol, atol=atol)
-                            native_samples = _event_samples(native_call, device_module, stream, warmup, batches, iterations_per_batch)
-                            native_info.update(latency_ms_median=statistics.median(native_samples),
-                                               latency_ms_samples=native_samples, measurement_method=measurement_method)
                     record = {
-                        "schema_version": 3, "operator": "rms_norm", "implementation": implementation,
+                        "schema_version": 4 if include_native_baseline else 3,
+                        "operator": "rms_norm", "implementation": implementation,
                         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
                         "device": device, "device_index": device_index, "hardware": hardware,
                         "shape": [row_count, width], "dtype": dtype_name,
@@ -178,12 +224,18 @@ def run_benchmark(
                         "graph_capture": False, "warmup_iterations": warmup, "batches": batches,
                         "iterations_per_batch": iterations_per_batch,
                         "latency_ms_median": statistics.median(samples), "latency_ms_samples": samples,
-                        "correctness_reference": "xpu_kernels.golden.rms_norm_golden",
+                        "correctness_reference": correctness_reference,
                         "correctness": {"status": "PASS" if check_correctness else "not_checked_in_profile",
                                         "max_abs_error": max_abs, "rtol": rtol, "atol": atol},
-                        "native_baseline": native_info, "baseline_best_ms": None, "speedup_vs_baseline": None,
+                        "native_baseline": ({"status": "self", "name": native_info.get("name"),
+                                             "semantics": native_info.get("semantics"),
+                                             "allocates_output": True}
+                                            if implementation == "native" else native_info),
+                        "baseline_best_ms": None, "speedup_vs_baseline": None,
                         "python": platform.python_version(), "torch": torch.__version__, "runtime": runtime,
                     }
+                    if include_native_baseline:
+                        record["output_allocation"] = output_allocation
                     records.append(record)
                     print(f"CASE {device}/{implementation} {row_count}x{width} {dtype_name} "
                           f"{record['correctness']['status']} {record['latency_ms_median']*1000:.3f} us", flush=True)
@@ -198,14 +250,29 @@ def validate_benchmark_record(row: dict) -> None:
         "latency_ms_samples", "correctness_reference", "native_baseline", "baseline_best_ms",
         "speedup_vs_baseline", "python", "torch", "runtime",
     }
-    if row.get("schema_version") == 3:
+    if row.get("schema_version") in (3, 4):
         required |= {"operator", "implementation", "correctness"}
-        if row["operator"] != "rms_norm" or row["implementation"] not in ("cuda", "triton", "torch", "ascendc"):
+        if row["operator"] != "rms_norm" or row["implementation"] not in ("cuda", "triton", "torch", "ascendc", "native"):
             raise ValueError("invalid operator or implementation")
+    if row.get("schema_version") == 4:
+        required.add("output_allocation")
     if set(row) != required:
         raise ValueError(f"benchmark record fields differ from schema: {sorted(set(row) ^ required)}")
-    if row["schema_version"] not in (2, 3) or len(row["shape"]) != 2:
+    if row["schema_version"] not in (2, 3, 4) or len(row["shape"]) != 2:
         raise ValueError("invalid benchmark record version or shape")
+    if row["schema_version"] == 4:
+        allocation = row["output_allocation"]
+        allocation_fields = {"strategy", "api_call", "event_timing_note"}
+        if not isinstance(allocation, dict) or set(allocation) != allocation_fields:
+            raise ValueError("schema 4 requires explicit output allocation and Event timing metadata")
+        if allocation["strategy"] not in (
+            "preallocated_out", "out_none_per_call", "operator_allocates_output_per_call"
+        ):
+            raise ValueError("invalid output allocation strategy")
+        if any(not isinstance(allocation[key], str) or not allocation[key] for key in allocation_fields):
+            raise ValueError("output allocation metadata values must be non-empty strings")
+        if row["device"] == "npu" and "CPU submission" not in allocation["event_timing_note"]:
+            raise ValueError("NPU Event metadata must describe possible CPU submission gaps")
     if row["batches"] < 1 or len(row["latency_ms_samples"]) != row["batches"]:
         raise ValueError("batch count does not match device-timing sample count")
     if row["iterations_per_batch"] < 1 or row["latency_ms_median"] < 0:
@@ -222,6 +289,19 @@ def _tolerances(torch, dtype) -> tuple[float, float]:
     if dtype == torch.float16:
         return 2e-3, 9.765625e-4
     return 1e-2, 7.8125e-3
+
+
+def _baseline_allocation_strategy(row: dict) -> str | None:
+    if row.get("schema_version") == 4:
+        allocation = row.get("output_allocation")
+        return allocation.get("strategy") if isinstance(allocation, dict) else None
+    # Schemas 2 and 3 benchmarked custom implementations with a preallocated out.
+    return "preallocated_out"
+
+
+def _correctness_status(row: dict) -> str:
+    correctness = row.get("correctness")
+    return correctness.get("status", "unknown") if isinstance(correctness, dict) else "unknown"
 
 
 def attach_existing_baseline(rows: list[dict], results_dir: Path) -> list[dict]:
@@ -244,7 +324,7 @@ def attach_existing_baseline(rows: list[dict], results_dir: Path) -> list[dict]:
             continue
         matches = [
             item for item in prior
-            if item.get("schema_version") in (2, 3)
+            if item.get("schema_version") in (2, 3, 4)
             and item.get("operator", "rms_norm") == row.get("operator", "rms_norm")
             and item.get("implementation", "triton" if item.get("device") == "cuda" else "ascendc") == row.get("implementation", "triton" if row.get("device") == "cuda" else "ascendc")
             and item.get("device") == row["device"]
@@ -257,6 +337,11 @@ def attach_existing_baseline(rows: list[dict], results_dir: Path) -> list[dict]:
             and item.get("runtime") == row["runtime"]
             and item.get("torch") == row["torch"]
             and item.get("python") == row["python"]
+            and all(row.get(key) is not None and item.get(key) == row.get(key) for key in (
+                "warmup_iterations", "batches", "iterations_per_batch",
+            ))
+            and _baseline_allocation_strategy(item) == _baseline_allocation_strategy(row)
+            and _correctness_status(item) == _correctness_status(row)
         ]
         best = min((item["latency_ms_median"] for item in matches), default=None)
         row["baseline_best_ms"] = best

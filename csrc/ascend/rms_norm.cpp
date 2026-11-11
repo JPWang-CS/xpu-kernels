@@ -9,6 +9,9 @@
 #include <deep_jit/backend/ascend/backend.hpp>
 #include <deep_jit/runtime/runtime.hpp>
 
+std::vector<torch::Tensor> mhc_post_backward(torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor,
+    torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, bool);
+
 namespace {
 
 using Runtime = deep_jit::Runtime<deep_jit::Ascend>;
@@ -95,5 +98,6 @@ torch::Tensor rms_norm(torch::Tensor x, torch::Tensor weight, torch::Tensor out,
 }  // namespace
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, module) {
+    module.def("mhc_post_backward", &mhc_post_backward, "NPU mixed Cube/Vector mHC post backward");
     module.def("rms_norm", &rms_norm, "xpu-kernels AscendC RMSNorm");
 }

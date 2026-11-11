@@ -65,7 +65,7 @@ def _load_extension():
     ldflags.extend(f"-Wl,-rpath,{path}" for path in libraries)
     return load(
         name="xpu_kernels_ascend",
-        sources=[str(source)],
+        sources=[str(source), str(root / "csrc" / "ascend" / "mhc_post_backward.cpp")],
         extra_cflags=["-std=c++20", "-O3", "-fPIC", "-DDJ_DISABLE_GIL=1"],
         extra_include_paths=[str(path) for path in includes],
         extra_ldflags=ldflags,

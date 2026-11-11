@@ -4,11 +4,20 @@ import tempfile
 import unittest
 import os
 import sys
+import importlib.util
 from types import SimpleNamespace
 from pathlib import Path
 from unittest.mock import patch
 
-from xpu_kernels.bench import attach_existing_baseline, validate_benchmark_record, _event_samples, _native_baseline
+from xpu_kernels.bench import (
+    _event_samples,
+    _benchmark_out,
+    _make_kernel_call,
+    _native_baseline,
+    _native_rms_norm_reference,
+    attach_existing_baseline,
+    validate_benchmark_record,
+)
 from xpu_kernels.cli import _csv_shapes, _parser, _profile_command, _profile_subprocess_env, _validate_test_report
 
 
@@ -92,6 +101,62 @@ class ProjectContractTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_benchmark_record(record)
 
+    def test_schema4_native_record_identifies_output_allocation(self):
+        record = {
+            "schema_version": 4, "operator": "rms_norm", "implementation": "native",
+            "timestamp_utc": "2026-11-11T00:00:00+00:00", "device": "npu", "device_index": 0,
+            "hardware": "Ascend950DT", "shape": [4, 128], "dtype": "bfloat16",
+            "measurement_method": "torch.npu.Event.elapsed_time",
+            "measurement_scope": "device_stream_elapsed_per_call", "execution_mode": "eager",
+            "graph_capture": False, "warmup_iterations": 1, "batches": 2,
+            "iterations_per_batch": 3, "latency_ms_median": 0.1,
+            "latency_ms_samples": [0.09, 0.11],
+            "correctness_reference": "xpu_kernels.bench._native_rms_norm_reference",
+            "correctness": {"status": "PASS", "max_abs_error": 0.0, "rtol": 0.01, "atol": 0.0078125},
+            "output_allocation": {
+                "strategy": "operator_allocates_output_per_call",
+                "api_call": "torch_npu.npu_rms_norm",
+                "event_timing_note": "torch.npu.Event may include CPU submission gaps; host output allocation is not isolated.",
+            },
+            "native_baseline": {"status": "self"}, "baseline_best_ms": None,
+            "speedup_vs_baseline": None, "python": "3.11", "torch": "2.9",
+            "runtime": {"torch_npu": "2.9", "cann_version": "9.2"},
+        }
+        validate_benchmark_record(record)
+
+    def test_delayed_implementation_calls_keep_their_own_output_and_backend(self):
+        calls = []
+
+        def dispatch(x, weight, out, implementation):
+            calls.append((implementation, out))
+            return out
+
+        first_out, second_out = object(), object()
+        first = _make_kernel_call(dispatch, "ascendc", "x", "w", first_out)
+        second = _make_kernel_call(dispatch, "other", "x", "w", second_out)
+        first()
+        second()
+        self.assertEqual(calls, [("ascendc", first_out), ("other", second_out)])
+
+    def test_native_npu_pair_allocates_output_per_call_without_changing_default_or_gpu(self):
+        allocated = object()
+        fake_torch = SimpleNamespace(empty_like=lambda x: allocated)
+        x = object()
+        self.assertIsNone(_benchmark_out(fake_torch, x, "npu", True))
+        self.assertIs(_benchmark_out(fake_torch, x, "npu", False), allocated)
+        self.assertIs(_benchmark_out(fake_torch, x, "cuda", True), allocated)
+
+    @unittest.skipUnless(importlib.util.find_spec("torch") is not None, "PyTorch is not installed")
+    def test_native_reference_applies_gamma_before_output_cast(self):
+        import torch
+
+        x = torch.tensor([[1.1, 0.7, -1.3]], dtype=torch.bfloat16)
+        weight = torch.tensor([1.3, -0.8, 0.6], dtype=torch.bfloat16)
+        x32, w32 = x.float(), weight.float()
+        fused = (x32 * torch.rsqrt((x32 * x32).mean(-1, keepdim=True) + 1e-5) * w32).to(x.dtype)
+        native_reference = _native_rms_norm_reference(torch, x, weight, 1e-5)
+        torch.testing.assert_close(native_reference, fused)
+
     def test_baseline_matches_device_hardware_shape_and_dtype(self):
         import json
         from pathlib import Path
@@ -100,6 +165,7 @@ class ProjectContractTests(unittest.TestCase):
             "schema_version": 2, "device": "cuda", "hardware": "L20X", "shape": [16, 4096],
             "dtype": "float16", "measurement_method": "torch.cuda.Event.elapsed_time",
             "execution_mode": "eager", "device_index": 0, "runtime": {"cuda": "12.6", "triton": "3.7.1"},
+            "warmup_iterations": 5, "batches": 10, "iterations_per_batch": 20,
             "torch": "2.13", "python": "3.12", "latency_ms_median": 0.2,
         }
         with tempfile.TemporaryDirectory() as temp:
@@ -115,6 +181,7 @@ class ProjectContractTests(unittest.TestCase):
             "schema_version": 2, "device": "cuda", "device_index": 0, "hardware": "L20X",
             "shape": [2, 512], "dtype": "float16", "measurement_method": "torch.cuda.Event.elapsed_time",
             "execution_mode": "eager", "runtime": {"cuda": "12.6", "triton": "3.8.0"},
+            "warmup_iterations": 5, "batches": 10, "iterations_per_batch": 20,
             "torch": "2.13", "python": "3.12", "latency_ms_median": 0.2,
         }
         prior = {**row, "runtime": {"cuda": "12.6", "triton": "3.7.1"}, "latency_ms_median": 0.3}
@@ -122,6 +189,55 @@ class ProjectContractTests(unittest.TestCase):
             Path(temp, "prior.jsonl").write_text(json.dumps(prior) + "\n", encoding="utf-8")
             result = attach_existing_baseline([row], Path(temp))[0]
         self.assertIsNone(result["baseline_best_ms"])
+
+    def test_baseline_requires_matching_allocation_timing_and_correctness(self):
+        import json
+
+        row = {
+            "schema_version": 4, "operator": "rms_norm", "implementation": "ascendc",
+            "device": "npu", "device_index": 0, "hardware": "Ascend950DT",
+            "shape": [16, 4096], "dtype": "bfloat16",
+            "measurement_method": "torch.npu.Event.elapsed_time", "execution_mode": "eager",
+            "warmup_iterations": 5, "batches": 10, "iterations_per_batch": 20,
+            "runtime": {"cann_version": "9.2", "torch_npu": "2.9"},
+            "torch": "2.9", "python": "3.11", "latency_ms_median": 0.2,
+            "correctness": {"status": "PASS"},
+            "output_allocation": {
+                "strategy": "out_none_per_call", "api_call": "rms_norm(out=None)",
+                "event_timing_note": "CPU submission gaps may appear in the NPU Event interval.",
+            },
+        }
+        legacy_preallocated = {
+            **row, "schema_version": 3, "latency_ms_median": 0.3,
+        }
+        legacy_preallocated.pop("output_allocation")
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp, "old.jsonl")
+            path.write_text(json.dumps(legacy_preallocated) + "\n", encoding="utf-8")
+            result = attach_existing_baseline([dict(row)], Path(temp))[0]
+            self.assertIsNone(result["baseline_best_ms"])
+
+            matching = {
+                **row, "latency_ms_median": 0.4,
+                "output_allocation": dict(row["output_allocation"]),
+            }
+            path.write_text(json.dumps(matching) + "\n", encoding="utf-8")
+            result = attach_existing_baseline([dict(row)], Path(temp))[0]
+            self.assertEqual(result["baseline_best_ms"], 0.4)
+
+            for key, mismatch in (
+                ("warmup_iterations", 6), ("batches", 11), ("iterations_per_batch", 21),
+            ):
+                with self.subTest(parameter=key):
+                    prior = {**matching, key: mismatch}
+                    path.write_text(json.dumps(prior) + "\n", encoding="utf-8")
+                    result = attach_existing_baseline([dict(row)], Path(temp))[0]
+                    self.assertIsNone(result["baseline_best_ms"])
+
+            failed_correctness = {**matching, "correctness": {"status": "FAIL"}}
+            path.write_text(json.dumps(failed_correctness) + "\n", encoding="utf-8")
+            result = attach_existing_baseline([dict(row)], Path(temp))[0]
+            self.assertIsNone(result["baseline_best_ms"])
 
     def test_event_timer_batches_device_intervals_without_wall_clock(self):
         calls = []

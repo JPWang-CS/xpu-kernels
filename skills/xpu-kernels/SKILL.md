@@ -37,7 +37,7 @@ python -m xpu_kernels.cli example --device npu
 python -m xpu_kernels.cli test --device npu
 ```
 
-Correctness comes before performance. Run the same shapes and dtypes on the kernel and golden. The built-in suite has 48 aligned/tail/model-width cases; the default GPU benchmark measures cuda, triton and torch composition, and NPU measures ascendc only. A device test is accepted only if the requested device is available and the relevant tests execute; all-skipped is not a device pass.
+Correctness comes before performance. Run the same shapes and dtypes on the kernel and golden. The built-in suite has 48 aligned/tail/model-width cases; the default GPU benchmark measures cuda, triton and torch composition, and NPU measures Ascend C plus CANN native when --native-reference is enabled. A device test is accepted only if the requested device is available and the relevant tests execute; all-skipped is not a device pass.
 
 ## Benchmark and profile
 
@@ -64,10 +64,28 @@ DeepJIT is the upstream header-only C++20 runtime in `third-party/deep-jit`; reu
 
 Builds and caches belong under `build/`, `cache/`, and `tmp/`. Keep benchmark JSONL under `results/benchmarks/` and profiler products under `results/profiles/`; Git tracks only the compact benchmark records and their README. `runs/`, `artifacts/`, `.runtime/`, `envs/`, and `tools/remote/` remain ignored/private.
 
-Performance tables use shape rows with columns `NPU 950DT`, `GPU L20X`, `GPU L20X（Triton）`, `GPU L20X（单算子拼接）`. Omit AscendC/CUDA suffixes and shape-source explanations from the table. Record dtype, device model, unit and measurement method once in table notes. The primitive-composition column means GPU composition of primitive PyTorch operations, not a framework RMSNorm API. Keep raw rows distinguished by operator and implementation; legacy GPU v1 rows identify Triton, not CUDA C++.
+GPU tables use shape rows and hardware-named implementation columns; write “单算子拼接” for primitive composition. NPU native comparisons use `Shape | 原生 | 优化`, with the actual hardware model above the table. Keep dtype, unit, output-allocation policy and measurement method together with each table. Do not add shape-source commentary. Preserve per-implementation raw rows and legacy provenance.
 
 ## Homepage performance highlights
 
 Keep the root README focused on supported operators, a compact measured comparison, quick start and the Python API. Put long environment/profiler notes in collapsible sections and link the full performance matrix. Feature only implemented, device-validated operators. Select aligned and tail shapes, small and large workloads; retain cases where another implementation is faster. Bold the lowest measured time among implementations on the same GPU, keeping NPU timings separate from this ranking.
 
 `tools/render_homepage_performance.py` updates the README performance block from the committed JSONL; use `--check` to verify it. Refresh it alongside `tools/render_rmsnorm_table.py` whenever published measurements change. Compute speedups from the matching raw rows; preserve dtype, device, timing method and workload settings.
+
+## mHC post backward
+
+`mhc_post_backward(grad_y, x, h_res, h_out, h_post, out=None, *, implementation="auto")` returns four gradients. Its independent CPU FP64 golden is `xpu_kernels.mhc_post_backward.mhc_post_backward_golden`, also checked against PyTorch autograd.
+
+The current API accepts contiguous TND/BSND input with four residual streams, FP16/BF16 data, FP32 mixing coefficients, 512..49152 tokens and D<=8192. The final optimized Ascend 950 kernel applies to BF16, 2048..49152 tokens, N=4, h_res present and D in {2560,5120,6144,7168}. Auto uses that kernel inside the range and CANN mainline outside it; explicit optimized rejects unsupported inputs. Native calls `torch_npu.npu_mhc_post_backward` / `aclnnMhcPostBackward`. See `docs/operators/mhc-post-backward.md`.
+
+```bash
+python -m xpu_kernels.cli build --backend npu --operator mhc_post_backward
+python -m xpu_kernels.cli example --device npu --operator mhc_post_backward --shape 2x1024x4x6144
+python -m xpu_kernels.cli test --device npu --operator mhc_post_backward
+python -m xpu_kernels.cli bench --device npu --operator mhc_post_backward --implementations native,optimized --warmup 20 --batches 10 --iterations-per-batch 50
+python -m xpu_kernels.cli profile --device npu --operator mhc_post_backward --implementation optimized --shape 2x1024x4x6144 --tool msprof
+```
+
+Benchmark both native and optimized with the same input, stream, output allocation policy and sampling method. Check the installed CANN mainline route with private custom-op overlays disabled; a private predecessor is not the native baseline. Public comparison tables use `Shape | 原生 | 优化`; state hardware model, dtype, unit and method once above each table. Keep historical experiment names only in raw provenance records. Compare within a device, retain slowdowns, and restrict the public MHC matrix to the optimized range.
+
+For kernel-only NPU comparisons use official msprof `Task Duration(us)` and retain the per-launch CSV samples and extraction rules. Keep Event stream intervals in a separate table; they can include CPU submission gaps. Reuse existing results only when native route, device, implementation and measurement conditions match. Validate the installed wheel on an actual device after migration. Preserve the CANN license bundled with the NPU source and cost model.

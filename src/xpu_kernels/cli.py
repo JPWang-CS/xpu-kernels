@@ -14,16 +14,16 @@ from .bench import attach_existing_baseline, run_benchmark, validate_benchmark_r
 from .environment import inspect_environment, require_device
 
 
-def _csv_shapes(value: str) -> list[tuple[int, int]]:
+def _csv_shapes(value: str) -> list[tuple[int, ...]]:
     result = []
     for item in value.split(","):
         try:
-            rows, width = (int(part) for part in item.lower().split("x", 1))
+            shape = tuple(int(part) for part in item.lower().split("x"))
         except (ValueError, TypeError) as exc:
-            raise argparse.ArgumentTypeError(f"invalid shape {item!r}; expected ROWSxWIDTH") from exc
-        if rows < 1 or width < 1:
+            raise argparse.ArgumentTypeError(f"invalid shape {item!r}; expected dimensions separated by x") from exc
+        if len(shape) not in (2, 3, 4) or any(n < 1 for n in shape):
             raise argparse.ArgumentTypeError("shape dimensions must be positive")
-        result.append((rows, width))
+        result.append(shape)
     if not result:
         raise argparse.ArgumentTypeError("at least one shape is required")
     return result
@@ -37,11 +37,11 @@ def _parser() -> argparse.ArgumentParser:
     build = commands.add_parser("build", help="build the selected native backend")
     build.add_argument("--backend", choices=("gpu", "npu"), required=True)
     build.add_argument("--force", action="store_true")
-    build.add_argument("--implementation", choices=("cuda", "triton"))
+    build.add_argument("--implementation", choices=("cuda", "triton", "auto", "native", "optimized"))
     example = commands.add_parser("example", help="run one RMSNorm correctness example")
     example.add_argument("--device", choices=("cuda", "npu"), required=True)
-    example.add_argument("--implementation", choices=("cuda", "triton", "ascendc"))
-    example.add_argument("--shape", type=_csv_shapes, default=_csv_shapes("4x4096"))
+    example.add_argument("--implementation", choices=("cuda", "triton", "ascendc", "auto", "native", "optimized"))
+    example.add_argument("--shape", type=_csv_shapes)
     test = commands.add_parser("test", help="run golden and backend correctness cases")
     test.add_argument("--device", choices=("cuda", "npu"), required=True)
     bench = commands.add_parser("bench", help="measure RMSNorm implementations over aligned and tail shapes")
@@ -58,9 +58,11 @@ def _parser() -> argparse.ArgumentParser:
     profile.add_argument("--device", choices=("cuda", "npu"), required=True)
     profile.add_argument("--tool", choices=("msprof", "nsys", "ncu"), required=True)
     profile.add_argument("--output", type=Path, default=Path("results/profiles"))
-    profile.add_argument("--shape", type=_csv_shapes, default=_csv_shapes("16x4096"))
-    profile.add_argument("--implementation", choices=("cuda", "triton", "ascendc"))
+    profile.add_argument("--shape", type=_csv_shapes)
+    profile.add_argument("--implementation", choices=("cuda", "triton", "ascendc", "auto", "native", "optimized"))
     profile.add_argument("--dtype", choices=("float32", "bfloat16", "float16"), default="bfloat16")
+    for command in (build, example, test, bench, profile):
+        command.add_argument("--operator", choices=("rms_norm", "mhc_post_backward"), default="rms_norm")
     return parser
 
 
@@ -287,6 +289,13 @@ def _profile(args) -> int:
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
+        if getattr(args, "operator", None) == "mhc_post_backward":
+            from .mhc_workload import run_cli
+            return run_cli(args)
+        if getattr(args,"implementation",None) in ("auto","native","optimized"):
+            raise ValueError("auto/native/optimized implementations apply to mhc_post_backward")
+        if args.command in ("example", "profile") and args.shape is None:
+            args.shape = [(4, 4096)] if args.command == "example" else [(16, 4096)]
         if args.command == "check-env":
             report = inspect_environment(args.backend)
             print(json.dumps(report, indent=2, ensure_ascii=False))

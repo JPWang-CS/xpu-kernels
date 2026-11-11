@@ -1,5 +1,6 @@
 include LICENSE README.md pyproject.toml requirements.txt setup.py
+include THIRD_PARTY_NOTICES.md
 include third-party/deep-jit/LICENSE
 recursive-include csrc *.cpp *.cu
-recursive-include kernels *.hpp
+recursive-include kernels *.h *.hpp LICENSE
 recursive-include third-party/deep-jit/include *.h *.hpp

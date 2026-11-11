@@ -29,6 +29,7 @@ class BuildPyWithNativeResources(build_py):
         deep_jit_license = ROOT / "third-party" / "deep-jit" / "LICENSE"
         if deep_jit_license.is_file():
             shutil.copy2(deep_jit_license, target / "third-party" / "deep-jit" / "LICENSE")
+        shutil.copy2(ROOT / "THIRD_PARTY_NOTICES.md", target / "THIRD_PARTY_NOTICES.md")
 
 
 setup(cmdclass={"build_py": BuildPyWithNativeResources})
