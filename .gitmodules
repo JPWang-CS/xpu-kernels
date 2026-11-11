@@ -1,0 +1,3 @@
+[submodule "third-party/deep-jit"]
+	path = third-party/deep-jit
+	url = https://github.com/deepseek-ai/DeepJIT.git

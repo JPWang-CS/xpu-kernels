@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xpu-kernels"
+version = "0.1.0"
+description = "Small, installable GPU and NPU kernel experiments with explicit correctness and performance checks."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+dependencies = ["torch"]
+
+[project.optional-dependencies]
+gpu = ["triton"]
+npu = []
+dev = ["pytest"]
+
+[project.scripts]
+xpu-kernels = "xpu_kernels.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.package-data]
+xpu_kernels = ["_native/**/*"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
