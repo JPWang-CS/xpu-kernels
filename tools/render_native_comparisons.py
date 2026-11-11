@@ -66,56 +66,38 @@ def rms_records():
 
 
 def homepage():
-    mhc, _ = mhc_records()
-    rms, _ = rms_records()
-    text = """### mHC Post Backward · NPU 950DT
+    # Preserve table generation in detailed documents; the README is visual.
+    mhc_records()
+    rms_records()
+    return """柱高为相对同 shape 基线的加速比，**1× 为基线，越高越快**。灰色为基线，青色为本库实现，紫色为 Triton。
 
-![mHC 原生与优化对照](docs/assets/mhc-native-performance.png)
+### mHC Post Backward
 
-**BF16 · μs/次**。原生为 CANN 9.2.0 B096 的 `aclnnMhcPostBackward`，优化为本库实现。每个 shape 预热 20 次，取 5 次 `msprof Task Duration(us)` 的中位数。
+![mHC Post Backward: CANN native versus xpu-kernels](docs/assets/benchmark-mhc.png)
 
-"""
-    text += table(mhc, ((2048,4,2560), (2048,4,6144), (8192,4,6144), (32768,4,6144), (2,1024,4,6144)), "bfloat16")
-    text += """
+[16 个 shape 与采样](docs/performance/mhc-post-backward.md) · [原始数据](results/benchmarks/mhc-post-backward-msprof.jsonl)
 
-优化范围：BF16、4 条残差流、传入 `h_res`，token 数为 2048–49152，特征宽度为 2560、5120、6144 或 7168。其它受支持输入自动调用 CANN 原生实现。
+### RMSNorm
 
-[16 个 shape 与原始采样](docs/performance/mhc-post-backward.md) · [公式与接口](docs/operators/mhc-post-backward.md)
+![RMSNorm on GPU L20X: composition, xpu-kernels and Triton](docs/assets/benchmark-rms-gpu.png)
 
-### RMSNorm · GPU L20X
+![RMSNorm on NPU 950DT: CANN native versus xpu-kernels](docs/assets/benchmark-rms-npu.png)
 
-![RMSNorm GPU 实现对比](docs/assets/rmsnorm-performance.png)
+<sub>NPU 两种实现的中间舍入顺序不同，分别按对应公式检查。</sub>
 
-**BF16 · μs/次**。设备 Event，Eager 模式，预热 20 次，测量 10 批、每批 50 次。加粗为同一 GPU 上最低耗时。
-
-| Shape | GPU L20X | GPU L20X（Triton） | GPU L20X（单算子拼接） |
-|---|---:|---:|---:|
-"""
-    gpu = load("rmsnorm-gpu-v2.jsonl", "torch.cuda.Event.elapsed_time", "rms_norm")
-    shapes = ((128,4096),(129,4097),(1024,4096),(4096,8192))
-    for shape in shapes:
-        values = [gpu[(shape,"bfloat16",impl)]["latency_ms_median"]*1000 for impl in ("cuda","triton","torch")]
-        cells = [f"**{t:.3f}**" if t == min(values) else f"{t:.3f}" for t in values]
-        text += "| " + " × ".join(map(str,shape)) + " | " + " | ".join(cells) + " |\n"
-    text += """
-单算子拼接在 GPU 上依次执行平方、均值、归一化和权重乘法，各实现保持相同的中间舍入顺序。
+[GPU 完整结果](docs/performance/README.md) · [NPU 原生对照](docs/performance/rmsnorm-native.md)
 
 <details>
-<summary><strong>RMSNorm · NPU 950DT 原生对照</strong></summary>
+<summary>测量条件与比较范围</summary>
 
-**BF16 · μs/次**。设备 Event，预热 20 次，10 批 × 50 次，两边每次调用均分配输出。
+- **mHC / NPU 950DT**：BF16，基线为 CANN 9.2.0 B096 的主线算子。使用 msprof `Task Duration(us)`，预热 20 次，取 5 次正式采样中位数。展示的 shape 均在优化范围内。
+- **RMSNorm / GPU L20X**：BF16，基线为 GPU 单算子拼接。CUDA C++、Triton 和拼接使用相同数值顺序。
+- **RMSNorm / NPU 950DT**：BF16，基线为 CANN 原生实现。本库按 Pangu 的中间舍入顺序计算，两者分别对照对应公式；原生更快的 shape 同样保留。
+- RMSNorm 使用设备 Event / Eager，预热 20 次，10 批 × 50 次，取批均值的中位数。Event 区间包含 CPU 提交间隙。每张图在同一设备内比较。
 
-""" + table(rms,shapes,"bfloat16","ascendc") + """
+[复现方法](docs/benchmarking.md) · [图表数据](docs/assets/performance-chart-data.json)
 
-本库遵循 Pangu 的数值顺序：归一化值先转回输入精度，再乘权重；CANN 原生在融合计算后转回输出精度。两者按各自公式检查。表中保留原生更快的 shape。
-
-</details>
-
-[48 个 shape · GPU 各实现](docs/performance/README.md) · [48 个 shape · NPU 原生对照](docs/performance/rmsnorm-native.md)
-
-GPU 与 NPU 分别测量；Event 区间包含 CPU 提交间隙，kernel 时间采用独立 profiler 数据。
-"""
-    return text.strip()
+</details>"""
 
 
 def documents():

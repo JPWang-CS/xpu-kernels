@@ -1,20 +1,15 @@
-# Homepage visual assets
+# Visual assets
 
-Generated with the built-in ImageGen tool. Visual assets use the project’s own title and abstract matrix-tile illustration; no vendor logos.
+## Brand masthead
 
-## xpu-kernels-hero.png
+`xpu-kernels-masthead.png` was generated with the built-in ImageGen tool. Original resolution: 2172x724; README display width:640. The wordmark, platform labels and abstract matrix-tile motif were visually checked. The artwork contains no performance data or vendor marks.
 
-- Original PNG: 2172 × 724.
-- Use: GitHub README hero, 3:1 landscape, full article width.
-- Prompt: Premium open-source engineering banner, deep ink navy background, white exact text “xpu-kernels”, “GPU / NPU Kernel Library”, “CUDA · Triton · Ascend C”. Left-aligned typography and restrained cyan/jade matrix tile assembly on the right, subtle amber accents, generous spacing. No speedup claims or vendor imagery.
-- Check: all three text lines verified against the rendered image; no data is encoded in the illustration.
+Prompt: A restrained academic/open-source kernel library masthead, near-white background #FAFCFE, crisp flat editorial art, no shadows, cards, 3D chips or neon. Exact wordmark “xpu-kernels”; subtitle “GPU / NPU Kernel Library”; line “CUDA · Triton · Ascend C”. An abstract X from square matrix tiles and thin grids at the right, using teal #0D9488, violet #7C3AED and slate #94A3B8. Generous whitespace, precise alignment and a thin bottom divider.
 
-## RMSNorm GPU performance card
+## Performance plots
 
-File: `rmsnorm-performance.png`. Built-in ImageGen; numeric cards, navy/teal/blue on pale white background. Source: `results/benchmarks/rmsnorm-gpu-v2.jsonl`, BF16, GPU L20X. 128x4096: CUDA 7.011, Triton 16.201, composition 36.486 us; 4096x8192: CUDA 58.522, Triton 37.066, composition 493.193 us. Ratios 5.20x and 13.31x against GPU primitive composition. Event/Eager, warmup20,10x50. Verified every displayed digit and implementation label.
+`benchmark-mhc.png`, `benchmark-rms-gpu.png`, and `benchmark-rms-npu.png` are exact-data charts rendered by Matplotlib via `tools/render_homepage_charts.py`. They replace the previous numeric-card illustrations. Plot values, hardware, metric, labels, colors and selected shapes are stored in `performance-chart-data.json` and checked against the original benchmark JSONL.
 
-## mHC CANN mainline comparison
+Each plot uses a linear zero-based axis, fixed per-series colors and a visible1x reference. Bar height is baseline latency divided by implementation latency. Labels round to two decimals while bar geometry uses the full ratio. The NPU RMSNorm plot retains cases below1x. Detailed documents retain absolute timings and measurement conditions.
 
-File: `mhc-native-performance.png`. Built-in ImageGen. Prompt: premium wide 2:1 engineering comparison, white/pale blue, navy sans-serif Chinese text, two aligned rounded numeric cards, teal highlights, no bar chart. Title mHC Post Backward; subtitle NPU 950DT / BF16 / us per call. Shape 2x1024x4x6144: native295.395, optimized89.943, 3.28x. Shape32768x4x6144: native4678.831, optimized1736.369,2.69x. Footer CANN mainline / msprof Task Duration / warmup20 / median5samples. No experiment-version labels.
-
-Source: `results/benchmarks/mhc-post-backward-msprof.jsonl`. Native is CANN aclnnMhcPostBackward, optimized is the final xpu-kernels implementation. Every digit, shape, Chinese label, unit, sampling method and ratio was visually checked against the raw samples.
+[Rendering and validation](../benchmarking.md#更新首页图表) · [Design references](../homepage-design.md)

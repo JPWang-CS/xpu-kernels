@@ -1,0 +1,282 @@
+{
+  "schema_version": 1,
+  "sources": [
+    "results/benchmarks/mhc-post-backward-msprof.jsonl",
+    "results/benchmarks/rmsnorm-gpu-v2.jsonl",
+    "results/benchmarks/rmsnorm-npu-mainline.jsonl"
+  ],
+  "charts": [
+    {
+      "id": "mhc",
+      "title": "mHC Post Backward",
+      "hardware": "NPU 950DT · BF16",
+      "baseline": "原生",
+      "method": "msprof · Task Duration",
+      "metric": "baseline_latency / implementation_latency",
+      "higher_is_better": true,
+      "ymax": 4.0,
+      "colors": {
+        "baseline": "#94A3B8",
+        "optimized": "#0D9488",
+        "triton": "#7C3AED"
+      },
+      "cases": [
+        {
+          "shape": [
+            2048,
+            4,
+            2560
+          ],
+          "latency_us": [
+            125.43,
+            43.167
+          ],
+          "speedup": [
+            1.0,
+            2.9056918479393983
+          ]
+        },
+        {
+          "shape": [
+            2048,
+            4,
+            6144
+          ],
+          "latency_us": [
+            295.689,
+            89.442
+          ],
+          "speedup": [
+            1.0,
+            3.3059300999530428
+          ]
+        },
+        {
+          "shape": [
+            8192,
+            4,
+            6144
+          ],
+          "latency_us": [
+            1174.6,
+            439.071
+          ],
+          "speedup": [
+            1.0,
+            2.675193761373445
+          ]
+        },
+        {
+          "shape": [
+            32768,
+            4,
+            6144
+          ],
+          "latency_us": [
+            4678.831,
+            1736.369
+          ],
+          "speedup": [
+            1.0,
+            2.6946063883886433
+          ]
+        }
+      ],
+      "series": [
+        {
+          "implementation": "native",
+          "label": "CANN 原生",
+          "color": "#94A3B8"
+        },
+        {
+          "implementation": "optimized",
+          "label": "xpu-kernels",
+          "color": "#0D9488"
+        }
+      ]
+    },
+    {
+      "id": "rms-gpu",
+      "title": "RMSNorm · GPU",
+      "hardware": "GPU L20X · BF16",
+      "baseline": "单算子拼接",
+      "method": "Event · Eager",
+      "metric": "baseline_latency / implementation_latency",
+      "higher_is_better": true,
+      "ymax": 16.0,
+      "colors": {
+        "baseline": "#94A3B8",
+        "optimized": "#0D9488",
+        "triton": "#7C3AED"
+      },
+      "cases": [
+        {
+          "shape": [
+            128,
+            4096
+          ],
+          "latency_us": [
+            36.48607969284058,
+            7.010560035705566,
+            16.200639605522156
+          ],
+          "speedup": [
+            1.0,
+            5.204445794203729,
+            2.2521382230121287
+          ]
+        },
+        {
+          "shape": [
+            129,
+            4097
+          ],
+          "latency_us": [
+            37.84128069877625,
+            7.268480062484741,
+            16.59359991550446
+          ],
+          "speedup": [
+            1.0,
+            5.206216481777092,
+            2.28047445349208
+          ]
+        },
+        {
+          "shape": [
+            1024,
+            4096
+          ],
+          "latency_us": [
+            82.18143939971924,
+            9.518400132656097,
+            16.288320422172546
+          ],
+          "speedup": [
+            1.0,
+            8.633955103207729,
+            5.045421336864751
+          ]
+        },
+        {
+          "shape": [
+            4096,
+            8192
+          ],
+          "latency_us": [
+            493.19263458251953,
+            58.52223873138428,
+            37.06560015678406
+          ],
+          "speedup": [
+            1.0,
+            8.427439641300504,
+            13.305939536830925
+          ]
+        }
+      ],
+      "series": [
+        {
+          "implementation": "torch",
+          "label": "单算子拼接",
+          "color": "#94A3B8"
+        },
+        {
+          "implementation": "cuda",
+          "label": "xpu-kernels",
+          "color": "#0D9488"
+        },
+        {
+          "implementation": "triton",
+          "label": "Triton",
+          "color": "#7C3AED"
+        }
+      ]
+    },
+    {
+      "id": "rms-npu",
+      "title": "RMSNorm · NPU",
+      "hardware": "NPU 950DT · BF16",
+      "baseline": "原生",
+      "method": "Event · Eager",
+      "metric": "baseline_latency / implementation_latency",
+      "higher_is_better": true,
+      "ymax": 1.5,
+      "colors": {
+        "baseline": "#94A3B8",
+        "optimized": "#0D9488",
+        "triton": "#7C3AED"
+      },
+      "cases": [
+        {
+          "shape": [
+            128,
+            4096
+          ],
+          "latency_us": [
+            15.862579941749573,
+            12.783010005950928
+          ],
+          "speedup": [
+            1.0,
+            1.2409111730621347
+          ]
+        },
+        {
+          "shape": [
+            129,
+            4097
+          ],
+          "latency_us": [
+            15.948870182037354,
+            13.246529698371887
+          ],
+          "speedup": [
+            1.0,
+            1.2040036556893545
+          ]
+        },
+        {
+          "shape": [
+            1024,
+            4096
+          ],
+          "latency_us": [
+            15.910120010375978,
+            26.54088020324707
+          ],
+          "speedup": [
+            1.0,
+            0.5994571351265697
+          ]
+        },
+        {
+          "shape": [
+            4096,
+            8192
+          ],
+          "latency_us": [
+            35.430530309677124,
+            143.90450954437256
+          ],
+          "speedup": [
+            1.0,
+            0.24620861724108942
+          ]
+        }
+      ],
+      "series": [
+        {
+          "implementation": "native",
+          "label": "CANN 原生",
+          "color": "#94A3B8"
+        },
+        {
+          "implementation": "ascendc",
+          "label": "xpu-kernels",
+          "color": "#0D9488"
+        }
+      ]
+    }
+  ]
+}
