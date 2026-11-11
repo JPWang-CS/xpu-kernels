@@ -68,25 +68,17 @@ def rms_records():
 def homepage():
     mhc_records()
     rms_records()
-    return """每组柱形对应同一个 shape，纵轴为 **μs/次，越低越快**。各面板独立使用从零开始的刻度。
+    return """### RMSNorm
 
-### RMSNorm
+![RMSNorm — NPU 与 GPU](docs/assets/benchmark-rmsnorm.png)
 
-![RMSNorm — NPU 950DT 与 GPU L20X 的绝对耗时](docs/assets/benchmark-rmsnorm.png)
-
-BF16，设备 Event / Eager 调用区间。各实现每次调用分配输出，预热 20 次，10 批 × 50 次，取批均值的中位数。
-
-[48 个 shape 的完整结果](docs/performance/README.md) · [公式与接口](docs/operators/rmsnorm.md)
+[RMSNorm 完整文档](docs/operators/rmsnorm.md)
 
 ### mHC Post Backward
 
-![mHC Post Backward — NPU 原生、NPU 优化与 GPU TileLang 的内核耗时](docs/assets/benchmark-mhc.png)
+![mHC Post Backward — NPU 与 GPU](docs/assets/benchmark-mhc.png)
 
-BF16，NPU 采用 msprof `Task Duration(us)`，GPU 采用 Nsight Compute 内核时间；各 shape 预热 20 次，取 5 次正式采样的中位数。NPU 原生为 CANN 包主线算子，GPU 使用 DeepSeek TileKernels 实现。
-
-[16 个 shape 的完整结果](docs/performance/mhc-post-backward.md) · [公式与接口](docs/operators/mhc-post-backward.md)
-
-[测试与采集方法](docs/benchmarking.md) · [图表数据](docs/assets/performance-chart-data.json)"""
+[mHC Post Backward 完整文档](docs/operators/mhc-post-backward.md)"""
 
 
 def legacy_documents():
