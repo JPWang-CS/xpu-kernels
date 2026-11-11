@@ -40,6 +40,7 @@ def inspect_environment(backend: str = "all") -> dict:
         "cxx": configured_cxx or shutil.which("c++") or shutil.which("g++"),
         "cxx_resolved": resolved_cxx,
         "nvcc": shutil.which("nvcc"),
+        "cuda_home": os.environ.get("CUDA_HOME"),
         "bisheng": shutil.which("bisheng"),
         "ld_lld": shutil.which("ld.lld"),
         "ascend_home_path": os.environ.get("ASCEND_HOME_PATH"),
@@ -52,6 +53,10 @@ def inspect_environment(backend: str = "all") -> dict:
             missing.append("torch")
         if not result["triton"]:
             missing.append("triton")
+        if backend == "gpu" and not result["nvcc"]:
+            missing.append("NVCC (CUDA C++ backend)")
+        if backend == "gpu" and result["cxx_resolved"] is None:
+            missing.append("C++ compiler")
         if backend == "gpu" and result["torch_installed"]:
             try:
                 import torch

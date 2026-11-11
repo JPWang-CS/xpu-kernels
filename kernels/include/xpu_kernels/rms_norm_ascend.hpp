@@ -33,24 +33,38 @@ __aicore__ inline void xpu_rms_norm_row(
 
     AscendC::TPipe pipe;
     AscendC::TBuf<AscendC::QuePosition::VECCALC> x_buf, w_buf, xf_buf;
-    AscendC::TBuf<AscendC::QuePosition::VECCALC> reduce_buf, reduce_tmp_buf;
+    AscendC::TBuf<AscendC::QuePosition::VECCALC> reduce_buf;
+#if !XPU_RMS_REUSE_WORK
+    AscendC::TBuf<AscendC::QuePosition::VECCALC> reduce_tmp_buf;
+#endif
     pipe.InitBuffer(x_buf, padded * sizeof(T));
+#if XPU_RMS_REUSE_WORK
+    // Wide rows reuse the dead reduction workspace for gamma.
+    pipe.InitBuffer(w_buf, padded * sizeof(float));
+#else
     pipe.InitBuffer(w_buf, padded * sizeof(T));
+    pipe.InitBuffer(reduce_tmp_buf, padded * sizeof(float));
+#endif
     pipe.InitBuffer(xf_buf, padded * sizeof(float));
     pipe.InitBuffer(reduce_buf, 32);
-    pipe.InitBuffer(reduce_tmp_buf, padded * sizeof(float));
 
     auto x_local = x_buf.Get<T>();
     auto w_local = w_buf.Get<T>();
     auto xf_local = xf_buf.Get<float>();
     auto reduce_local = reduce_buf.Get<float>();
+#if XPU_RMS_REUSE_WORK
+    auto reduce_tmp = w_buf.Get<float>();
+#else
     auto reduce_tmp = reduce_tmp_buf.Get<float>();
+#endif
 
     AscendC::DataCopyExtParams copy_params{1, width * static_cast<uint32_t>(sizeof(T)), 0, 0, 0};
     AscendC::DataCopyPadExtParams<T> pad_params{true, 0, static_cast<uint8_t>(padded - width), static_cast<T>(0)};
     AscendC::DataCopyPad(x_local, x_global, copy_params, pad_params);
+#if !XPU_RMS_REUSE_WORK
     AscendC::DataCopyPad(w_local, w_global, copy_params, pad_params);
-    AscendC::PipeBarrier<PIPE_ALL>();  // MTE2 -> V: input and weight are ready.
+#endif
+    AscendC::PipeBarrier<PIPE_ALL>();  // MTE2 -> V: input is ready.
 #if XPU_RMS_DTYPE == 0
     AscendC::DataCopy(xf_local, x_local, padded);
 #else
@@ -64,6 +78,9 @@ __aicore__ inline void xpu_rms_norm_row(
 
     const float mean_square = reduce_local.GetValue(0) / static_cast<float>(width);
     const float scale = 1.0f / sqrt(mean_square + epsilon);
+#if XPU_RMS_REUSE_WORK
+    AscendC::DataCopyPad(w_local, w_global, copy_params, pad_params);
+#endif
     AscendC::PipeBarrier<PIPE_ALL>();  // Scalar scale -> V arithmetic.
 #if XPU_RMS_DTYPE == 0
     AscendC::DataCopy(xf_local, x_local, padded);

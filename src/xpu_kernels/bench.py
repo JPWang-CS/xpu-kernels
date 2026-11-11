@@ -97,108 +97,97 @@ def run_benchmark(
     iterations_per_batch: int = 10,
     dtypes: tuple[str, ...] | None = None,
     check_correctness: bool = True,
-    include_native_baseline: bool = True,
+    include_native_baseline: bool = False,
+    implementations: tuple[str, ...] | None = None,
 ) -> list[dict]:
     import torch
-
     from . import rms_norm
     from .golden import rms_norm_golden
+    from .baselines import make_cuda_composed
 
     if batches < 1 or iterations_per_batch < 1 or warmup < 0:
         raise ValueError("batches and iterations_per_batch must be positive; warmup must be non-negative")
+    allowed = ("cuda", "triton", "torch") if device == "cuda" else ("ascendc",)
+    selected = allowed if implementations is None else implementations
+    if not selected or len(set(selected)) != len(selected) or any(x not in allowed for x in selected):
+        raise ValueError(f"{device} implementations must be unique selections from {allowed}")
     device_module = torch.cuda if device == "cuda" else torch.npu
-    dev = torch.device(device)
     device_index = device_module.current_device()
+    hardware = device_module.get_device_name(device_index)
     if device == "cuda":
-        hardware = torch.cuda.get_device_name(device_index)
-        runtime = {
-            "cuda": torch.version.cuda,
-            "compute_capability": list(torch.cuda.get_device_capability(device_index)),
-            "triton": __import__("triton").__version__,
-        }
+        import importlib.metadata
+        try:
+            triton_version = importlib.metadata.version("triton")
+        except importlib.metadata.PackageNotFoundError:
+            triton_version = None
+        runtime = {"cuda": torch.version.cuda,
+                   "compute_capability": list(torch.cuda.get_device_capability(device_index)),
+                   "triton": triton_version}
         measurement_method = "torch.cuda.Event.elapsed_time"
     else:
         import torch_npu
-
-        hardware = torch.npu.get_device_name(device_index)
-        runtime = {
-            "torch_npu": getattr(torch_npu, "__version__", "unknown"),
-            "cann_version": _cann_version(),
-        }
+        runtime = {"torch_npu": torch_npu.__version__, "cann_version": _cann_version()}
         measurement_method = "torch.npu.Event.elapsed_time"
-
     dtype_map = {"float32": torch.float32, "bfloat16": torch.bfloat16, "float16": torch.float16}
     selected_dtypes = tuple(dtype_map) if dtypes is None else dtypes
-    if any(name not in dtype_map for name in selected_dtypes):
+    if not selected_dtypes or any(name not in dtype_map for name in selected_dtypes):
         raise ValueError(f"unsupported benchmark dtype selection: {selected_dtypes}")
-    rows = []
-    context = device_module.device(device_index)
-    with context:
+    records = []
+    with torch.inference_mode(), device_module.device(device_index):
         stream = device_module.current_stream(device_index)
         for row_count, width in shapes:
             for dtype_name in selected_dtypes:
                 dtype = dtype_map[dtype_name]
-                x = torch.randn(row_count, width, device=dev, dtype=dtype)
-                weight = torch.randn(width, device=dev, dtype=dtype)
-                out = torch.empty_like(x)
-                golden_out = torch.empty_like(x)
-                op = lambda: rms_norm(x, weight, out=out)
-                reference = lambda: rms_norm_golden(x, weight, out=golden_out)
-
-                if check_correctness:
-                    actual = op()
-                    expected = reference()
-                    stream.synchronize()
-                    rtol, atol = _tolerances(torch, dtype)
-                    torch.testing.assert_close(actual, expected, rtol=rtol, atol=atol)
-
-                kernel_samples = _event_samples(op, device_module, stream, warmup, batches, iterations_per_batch)
-                if include_native_baseline:
-                    native_call, native_info = _native_baseline(device, torch, x, weight, 1e-5)
-                else:
-                    native_call, native_info = None, {"status": "not_requested"}
-                if native_call is not None:
-                    try:
-                        native_result = native_call()
-                        if not isinstance(native_result, torch.Tensor):
-                            raise TypeError(f"native RMSNorm returned {type(native_result).__name__}, expected Tensor")
+                # Every implementation sees exactly the same input and weight.
+                torch.manual_seed(20261111 + row_count + width)
+                x = torch.randn(row_count, width, device=device, dtype=dtype)
+                weight = torch.randn(width, device=device, dtype=dtype)
+                expected = rms_norm_golden(x, weight) if check_correctness else None
+                rtol, atol = _tolerances(torch, dtype)
+                for implementation in selected:
+                    out = torch.empty_like(x)
+                    if implementation == "torch":
+                        op = make_cuda_composed(x, weight, out)
+                    else:
+                        op = lambda: rms_norm(x, weight, out=out, implementation=implementation)
+                    max_abs = None
+                    if check_correctness:
+                        actual = op()
                         stream.synchronize()
-                        native_samples = _event_samples(
-                            native_call, device_module, stream, warmup, batches, iterations_per_batch
-                        )
-                        native_info["latency_ms_median"] = statistics.median(native_samples)
-                        native_info["latency_ms_samples"] = native_samples
-                        native_info["measurement_method"] = measurement_method
-                    except Exception as exc:
-                        stream.synchronize()
-                        native_info = {"status": "unavailable", "reason": f"{type(exc).__name__}: {exc}"}
-
-                rows.append({
-                    "schema_version": 2,
-                    "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-                    "device": device,
-                    "device_index": device_index,
-                    "hardware": hardware,
-                    "shape": [row_count, width],
-                    "dtype": str(dtype).removeprefix("torch."),
-                    "measurement_method": measurement_method,
-                    "measurement_scope": "device_stream_elapsed_per_call",
-                    "execution_mode": "eager",
-                    "graph_capture": False,
-                    "warmup_iterations": warmup,
-                    "batches": batches,
-                    "iterations_per_batch": iterations_per_batch,
-                    "latency_ms_median": statistics.median(kernel_samples),
-                    "latency_ms_samples": kernel_samples,
-                    "correctness_reference": "xpu_kernels.golden.rms_norm_golden (not a performance baseline)",
-                    "native_baseline": native_info,
-                    "baseline_best_ms": None,
-                    "speedup_vs_baseline": None,
-                    "python": platform.python_version(),
-                    "torch": torch.__version__,
-                    "runtime": runtime,
-                })
-    return rows
+                        torch.testing.assert_close(actual, expected, rtol=rtol, atol=atol)
+                        max_abs = (actual.float()-expected.float()).abs().max().item()
+                    samples = _event_samples(op, device_module, stream, warmup, batches, iterations_per_batch)
+                    native_info = {"status": "not_requested"}
+                    if include_native_baseline:
+                        native_call, native_info = _native_baseline(device, torch, x, weight, 1e-5)
+                        if native_call is not None:
+                            native_result = native_call()
+                            stream.synchronize()
+                            if expected is not None:
+                                torch.testing.assert_close(native_result, expected, rtol=rtol, atol=atol)
+                            native_samples = _event_samples(native_call, device_module, stream, warmup, batches, iterations_per_batch)
+                            native_info.update(latency_ms_median=statistics.median(native_samples),
+                                               latency_ms_samples=native_samples, measurement_method=measurement_method)
+                    record = {
+                        "schema_version": 3, "operator": "rms_norm", "implementation": implementation,
+                        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+                        "device": device, "device_index": device_index, "hardware": hardware,
+                        "shape": [row_count, width], "dtype": dtype_name,
+                        "measurement_method": measurement_method,
+                        "measurement_scope": "device_stream_elapsed_per_call", "execution_mode": "eager",
+                        "graph_capture": False, "warmup_iterations": warmup, "batches": batches,
+                        "iterations_per_batch": iterations_per_batch,
+                        "latency_ms_median": statistics.median(samples), "latency_ms_samples": samples,
+                        "correctness_reference": "xpu_kernels.golden.rms_norm_golden",
+                        "correctness": {"status": "PASS" if check_correctness else "not_checked_in_profile",
+                                        "max_abs_error": max_abs, "rtol": rtol, "atol": atol},
+                        "native_baseline": native_info, "baseline_best_ms": None, "speedup_vs_baseline": None,
+                        "python": platform.python_version(), "torch": torch.__version__, "runtime": runtime,
+                    }
+                    records.append(record)
+                    print(f"CASE {device}/{implementation} {row_count}x{width} {dtype_name} "
+                          f"{record['correctness']['status']} {record['latency_ms_median']*1000:.3f} us", flush=True)
+    return records
 
 
 def validate_benchmark_record(row: dict) -> None:
@@ -209,9 +198,13 @@ def validate_benchmark_record(row: dict) -> None:
         "latency_ms_samples", "correctness_reference", "native_baseline", "baseline_best_ms",
         "speedup_vs_baseline", "python", "torch", "runtime",
     }
+    if row.get("schema_version") == 3:
+        required |= {"operator", "implementation", "correctness"}
+        if row["operator"] != "rms_norm" or row["implementation"] not in ("cuda", "triton", "torch", "ascendc"):
+            raise ValueError("invalid operator or implementation")
     if set(row) != required:
         raise ValueError(f"benchmark record fields differ from schema: {sorted(set(row) ^ required)}")
-    if row["schema_version"] != 2 or len(row["shape"]) != 2:
+    if row["schema_version"] not in (2, 3) or len(row["shape"]) != 2:
         raise ValueError("invalid benchmark record version or shape")
     if row["batches"] < 1 or len(row["latency_ms_samples"]) != row["batches"]:
         raise ValueError("batch count does not match device-timing sample count")
@@ -251,7 +244,9 @@ def attach_existing_baseline(rows: list[dict], results_dir: Path) -> list[dict]:
             continue
         matches = [
             item for item in prior
-            if item.get("schema_version") == 2
+            if item.get("schema_version") in (2, 3)
+            and item.get("operator", "rms_norm") == row.get("operator", "rms_norm")
+            and item.get("implementation", "triton" if item.get("device") == "cuda" else "ascendc") == row.get("implementation", "triton" if row.get("device") == "cuda" else "ascendc")
             and item.get("device") == row["device"]
             and item.get("hardware") == row["hardware"]
             and item.get("shape") == row["shape"]

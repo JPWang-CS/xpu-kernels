@@ -25,14 +25,20 @@ Runtime& get_runtime() {
     return *jit.get();
 }
 
-std::string source_for_dtype(const int dtype_code) {
+std::string source_for_dtype(const int dtype_code, const torch::Tensor& x) {
+    const uint64_t width = x.size(-1);
+    const uint64_t align = 32 / x.element_size();
+    const uint64_t padded = (width + align - 1) / align * align;
+    const uint64_t separate_ub = padded * (2 * x.element_size() + 2 * sizeof(float)) + 32;
+    const bool reuse = separate_ub > static_cast<uint64_t>(get_runtime().device.get_num_ubuf_bytes_per_vec_core());
     return "#define XPU_RMS_DTYPE " + std::to_string(dtype_code) +
+           "\n#define XPU_RMS_REUSE_WORK " + std::to_string(reuse) +
            "\n#include <xpu_kernels/rms_norm_ascend.hpp>\n";
 }
 
 void launch_float(torch::Tensor& x, torch::Tensor& weight, torch::Tensor& out, const double eps) {
     auto& runtime = get_runtime();
-    const auto kernel = runtime.compile("rms_norm_f32", source_for_dtype(0));
+    const auto kernel = runtime.compile("rms_norm_f32", source_for_dtype(0, x));
     runtime.launch(kernel, {.num_blocks = static_cast<int>(x.numel() / x.size(-1))},
                    out.data_ptr<float>(), x.data_ptr<float>(), weight.data_ptr<float>(),
                    static_cast<uint32_t>(x.size(-1)), static_cast<float>(eps));
@@ -40,7 +46,7 @@ void launch_float(torch::Tensor& x, torch::Tensor& weight, torch::Tensor& out, c
 
 void launch_half(torch::Tensor& x, torch::Tensor& weight, torch::Tensor& out, const double eps) {
     auto& runtime = get_runtime();
-    const auto kernel = runtime.compile("rms_norm_f16", source_for_dtype(1));
+    const auto kernel = runtime.compile("rms_norm_f16", source_for_dtype(1, x));
     runtime.launch(kernel, {.num_blocks = static_cast<int>(x.numel() / x.size(-1))},
                    reinterpret_cast<uint16_t*>(out.data_ptr()),
                    reinterpret_cast<const uint16_t*>(x.data_ptr()),
@@ -50,7 +56,7 @@ void launch_half(torch::Tensor& x, torch::Tensor& weight, torch::Tensor& out, co
 
 void launch_bfloat16(torch::Tensor& x, torch::Tensor& weight, torch::Tensor& out, const double eps) {
     auto& runtime = get_runtime();
-    const auto kernel = runtime.compile("rms_norm_bf16", source_for_dtype(2));
+    const auto kernel = runtime.compile("rms_norm_bf16", source_for_dtype(2, x));
     runtime.launch(kernel, {.num_blocks = static_cast<int>(x.numel() / x.size(-1))},
                    reinterpret_cast<uint16_t*>(out.data_ptr()),
                    reinterpret_cast<const uint16_t*>(x.data_ptr()),
@@ -72,7 +78,7 @@ torch::Tensor rms_norm(torch::Tensor x, torch::Tensor weight, torch::Tensor out,
     const auto width = static_cast<uint64_t>(x.size(-1));
     const auto alignment = 32 / x.element_size();
     const auto padded = (width + alignment - 1) / alignment * alignment;
-    const auto required_ub = padded * (2 * x.element_size() + 2 * sizeof(float)) + 32;
+    const auto required_ub = padded * (x.element_size() + 2 * sizeof(float)) + 32;
     TORCH_CHECK(width <= std::numeric_limits<uint32_t>::max(), "width exceeds kernel indexing range");
     TORCH_CHECK(required_ub <= static_cast<uint64_t>(runtime.device.get_num_ubuf_bytes_per_vec_core()),
                 "RMSNorm row requires ", required_ub, " bytes of UB; split-row implementation required for this width");

@@ -18,6 +18,7 @@ class BuildPyWithNativeResources(build_py):
         target = Path(self.build_lib) / "xpu_kernels" / "_native"
         resources = {
             ROOT / "csrc" / "ascend": target / "csrc" / "ascend",
+            ROOT / "csrc" / "cuda": target / "csrc" / "cuda",
             ROOT / "kernels" / "include": target / "kernels" / "include",
             ROOT / "third-party" / "deep-jit" / "include": target / "third-party" / "deep-jit" / "include",
         }

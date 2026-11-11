@@ -37,23 +37,29 @@ def _parser() -> argparse.ArgumentParser:
     build = commands.add_parser("build", help="build the selected native backend")
     build.add_argument("--backend", choices=("gpu", "npu"), required=True)
     build.add_argument("--force", action="store_true")
+    build.add_argument("--implementation", choices=("cuda", "triton"))
     example = commands.add_parser("example", help="run one RMSNorm correctness example")
     example.add_argument("--device", choices=("cuda", "npu"), required=True)
+    example.add_argument("--implementation", choices=("cuda", "triton", "ascendc"))
     example.add_argument("--shape", type=_csv_shapes, default=_csv_shapes("4x4096"))
     test = commands.add_parser("test", help="run golden and backend correctness cases")
     test.add_argument("--device", choices=("cuda", "npu"), required=True)
-    bench = commands.add_parser("bench", help="compare RMSNorm with its golden baseline")
+    bench = commands.add_parser("bench", help="measure RMSNorm implementations over aligned and tail shapes")
     bench.add_argument("--device", choices=("cuda", "npu"), required=True)
-    bench.add_argument("--shapes", type=_csv_shapes, default=_csv_shapes("1x4096,16x4096,128x4096"))
+    bench.add_argument("--shapes", type=_csv_shapes, default=None)
     bench.add_argument("--batches", "--repeats", dest="batches", type=int, default=20)
     bench.add_argument("--iterations-per-batch", type=int, default=10)
     bench.add_argument("--warmup", type=int, default=5)
     bench.add_argument("--output", type=Path)
+    bench.add_argument("--implementations", help="GPU: cuda,triton,torch; NPU: ascendc")
+    bench.add_argument("--dtypes", default="float32,bfloat16,float16")
+    bench.add_argument("--native-reference", action="store_true")
     profile = commands.add_parser("profile", help="run an independent profiler workload")
     profile.add_argument("--device", choices=("cuda", "npu"), required=True)
     profile.add_argument("--tool", choices=("msprof", "nsys", "ncu"), required=True)
     profile.add_argument("--output", type=Path, default=Path("results/profiles"))
     profile.add_argument("--shape", type=_csv_shapes, default=_csv_shapes("16x4096"))
+    profile.add_argument("--implementation", choices=("cuda", "triton", "ascendc"))
     profile.add_argument("--dtype", choices=("float32", "bfloat16", "float16"), default="bfloat16")
     return parser
 
@@ -71,13 +77,20 @@ def _root() -> Path:
     raise RuntimeError("run the command from the xpu-kernels project root or set XPU_KERNELS_PROJECT_ROOT")
 
 
-def _build(backend: str, force: bool) -> int:
+def _build(backend: str, force: bool, implementation: str | None = None) -> int:
     if backend == "gpu":
-        report = inspect_environment("gpu")
-        if not report["triton"]:
-            raise RuntimeError("GPU backend build check requires Triton in the active Python environment")
-        print(json.dumps(report, indent=2, ensure_ascii=False))
-        print("GPU backend is Python/Triton; no native build is required.")
+        require_device("cuda")
+        if implementation == "triton":
+            report = inspect_environment("gpu")
+            if not report["triton"]:
+                raise RuntimeError("Triton is missing")
+            print(json.dumps(report, indent=2, ensure_ascii=False))
+            return 0
+        from .backends.cuda import _load_extension
+        if force:
+            _load_extension.cache_clear()
+        module = _load_extension()
+        print(f"built and loaded CUDA extension: {module.__file__}")
         return 0
     require_device("npu")
     if force:
@@ -103,7 +116,7 @@ def _build(backend: str, force: bool) -> int:
     return 0
 
 
-def _example(device: str, shape: tuple[int, int]) -> int:
+def _example(device: str, shape: tuple[int, int], implementation: str | None = None) -> int:
     require_device(device)
     import torch
 
@@ -116,7 +129,7 @@ def _example(device: str, shape: tuple[int, int]) -> int:
     for dtype in (torch.float32, torch.bfloat16, torch.float16):
         x = torch.randn(rows, width, device=dev, dtype=dtype)
         weight = torch.randn(width, device=dev, dtype=dtype)
-        actual = rms_norm(x, weight)
+        actual = rms_norm(x, weight, implementation=implementation)
         expected = rms_norm_golden(x, weight)
         _synchronize(device)
         rtol, atol = _tolerances(torch, dtype)
@@ -177,7 +190,7 @@ def _validate_test_report(output: str, device: str) -> None:
     raise RuntimeError(f"requested {device} correctness case did not finish successfully: {' | '.join(block[-6:])}")
 
 
-def _profile_command(tool: str, binary: str, output: Path, workload: list[str], msprof_help: str = "") -> list[str]:
+def _profile_command(tool: str, binary: str, output: Path, workload: list[str], msprof_help: str = "", implementation: str = "triton") -> list[str]:
     if tool == "msprof":
         if "--output" not in msprof_help or "--application" not in msprof_help:
             raise RuntimeError("msprof --help did not advertise both --output and --application")
@@ -189,7 +202,7 @@ def _profile_command(tool: str, binary: str, output: Path, workload: list[str], 
             binary,
             "--target-processes", "all",
             "--launch-count", "1",
-            "--kernel-name", "regex:_rms_norm_kernel",
+            "--kernel-name", "regex:_rms_norm_kernel" if implementation == "triton" else "regex:.*rms_norm.*",
             "--replay-mode", "kernel",
             "--cache-control", "none",
             "--clock-control", "none",
@@ -212,7 +225,12 @@ def _profile_subprocess_env() -> dict[str, str]:
 
 def _bench(args) -> int:
     require_device(args.device)
-    rows = run_benchmark(args.device, args.shapes, args.warmup, args.batches, args.iterations_per_batch)
+    from .suites import RMSNORM_SHAPES
+    shapes = args.shapes or list(RMSNORM_SHAPES)
+    implementations = tuple(args.implementations.split(",")) if args.implementations else None
+    rows = run_benchmark(args.device, shapes, args.warmup, args.batches, args.iterations_per_batch,
+                         dtypes=tuple(args.dtypes.split(",")), implementations=implementations,
+                         include_native_baseline=args.native_reference)
     rows = attach_existing_baseline(rows, _root() / "results" / "benchmarks")
     for row in rows:
         validate_benchmark_record(row)
@@ -247,20 +265,21 @@ def _profile(args) -> int:
         raise RuntimeError(f"profiler executable {args.tool!r} was not found")
     from .profile_workload import check_profile_case
 
-    check_profile_case(args.device, args.shape[0], args.dtype)
+    implementation = args.implementation or ("cuda" if args.device == "cuda" else "ascendc")
+    check_profile_case(args.device, args.shape[0], args.dtype, implementation)
     output = args.output if args.output.is_absolute() else _root() / args.output
     output.mkdir(parents=True, exist_ok=True)
     workload = [
         sys.executable, "-m", "xpu_kernels.profile_workload",
         "--device", args.device,
         "--shape", f"{args.shape[0][0]}x{args.shape[0][1]}",
-        "--dtype", args.dtype,
+        "--dtype", args.dtype, "--implementation", implementation,
     ]
     if args.tool == "msprof":
         help_result = subprocess.run([binary, "--help"], text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        command = _profile_command(args.tool, binary, output, workload, help_result.stdout)
+        command = _profile_command(args.tool, binary, output, workload, help_result.stdout, implementation)
     else:
-        command = _profile_command(args.tool, binary, output, workload)
+        command = _profile_command(args.tool, binary, output, workload, implementation=implementation)
     print("PROFILE_COMMAND=" + json.dumps(command))
     return subprocess.run(command, cwd=_root(), env=_profile_subprocess_env()).returncode
 
@@ -274,9 +293,9 @@ def main(argv: list[str] | None = None) -> int:
             missing = report.get("missing", [])
             return 1 if missing else 0
         if args.command == "build":
-            return _build(args.backend, args.force)
+            return _build(args.backend, args.force, args.implementation)
         if args.command == "example":
-            return _example(args.device, args.shape[0])
+            return _example(args.device, args.shape[0], args.implementation)
         if args.command == "test":
             return _test(args.device)
         if args.command == "bench":
