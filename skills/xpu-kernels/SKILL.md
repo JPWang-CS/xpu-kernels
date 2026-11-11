@@ -65,3 +65,9 @@ DeepJIT is the upstream header-only C++20 runtime in `third-party/deep-jit`; reu
 Builds and caches belong under `build/`, `cache/`, and `tmp/`. Keep benchmark JSONL under `results/benchmarks/` and profiler products under `results/profiles/`; Git tracks only the compact benchmark records and their README. `runs/`, `artifacts/`, `.runtime/`, `envs/`, and `tools/remote/` remain ignored/private.
 
 Performance tables use shape rows with columns `NPU 950DT`, `GPU L20X`, `GPU L20X（Triton）`, `GPU L20X（单算子拼接）`. Omit AscendC/CUDA suffixes and shape-source explanations from the table. Record dtype, device model, unit and measurement method once in table notes. The primitive-composition column means GPU composition of primitive PyTorch operations, not a framework RMSNorm API. Keep raw rows distinguished by operator and implementation; legacy GPU v1 rows identify Triton, not CUDA C++.
+
+## Homepage performance highlights
+
+Keep the root README focused on supported operators, a compact measured comparison, quick start and the Python API. Put long environment/profiler notes in collapsible sections and link the full performance matrix. Feature only implemented, device-validated operators. Select aligned and tail shapes, small and large workloads; retain cases where another implementation is faster. Bold the lowest measured time among implementations on the same GPU, keeping NPU timings separate from this ranking.
+
+`tools/render_homepage_performance.py` updates the README performance block from the committed JSONL; use `--check` to verify it. Refresh it alongside `tools/render_rmsnorm_table.py` whenever published measurements change. Compute speedups from the matching raw rows; preserve dtype, device, timing method and workload settings.
