@@ -1,15 +1,29 @@
 # Homepage structure and charts
 
-The README follows an engineering-library reading order: scope and supported kernels, measured comparisons, a minimal executable quick start, then documentation. Environment diagnostics, compiler details and profiler commands live in dedicated documents.
+The README introduces xpu-kernels as a GPU/NPU operator library, then moves through installation and a minimal API example, operator descriptions and their detailed guides, measured performance grouped by operator, and reproduction instructions. Environment setup and operator-specific input constraints stay in linked documents.
+
+The homepage uses a compact masthead and two combined performance figures. The artwork and chart renderers keep product identity separate from measured values. All chart values come from benchmark JSONL records; the source data remains unchanged during rendering.
+
+## Performance figures
+
+### RMSNorm
+
+`docs/assets/benchmark-rmsnorm.png` compares NPU native and xpu-kernels with GPU CUDA, Triton and single-op composition. It reports per-call Event latency in microseconds. Every implementation allocates its output per call; the GPU composition also creates its intermediate tensors per call. The GPU native RMSNorm measurements remain in the full 192-record dataset for consistent allocation-policy comparisons.
+
+### mHC Post Backward
+
+`docs/assets/benchmark-mhc.png` compares NPU CANN native and xpu-kernels optimized kernel duration with GPU TileLang kernel duration. NPU values use msprof `Task Duration(us)`; GPU values use Nsight Compute `gpu__time_duration.sum`. The charts use the same four shapes, dtype and input distribution on each device, with independently generated device inputs.
+
+Both figures use absolute microseconds and linear axes starting at zero. Each is a 2×2 layout with one selected shape per panel; every panel compares the corresponding implementations across both devices. RMSNorm Event call intervals and mHC kernel duration appear in separate figures because they measure different scopes. Each figure's exact selections and values are recorded in `docs/assets/performance-chart-data.json`; the renderer's `--check` mode verifies the manifest against current benchmark records.
+
+## Reading order and references
+
+The README keeps implementation-language details in the operator guides and presents each operator by its purpose and usage. Performance summaries follow the operator descriptions, with installation and measurement steps linked from the reproduction section.
 
 References reviewed:
 
 - [DeepGEMM](https://github.com/deepseek-ai/DeepGEMM): concise library scope, clear requirements and implementation interfaces.
-- [FlashInfer](https://github.com/flashinfer-ai/flashinfer): direct installation and executable API examples, with comprehensive documentation linked separately.
+- [FlashInfer](https://github.com/flashinfer-ai/flashinfer): direct installation and executable API examples, with detailed documentation linked separately.
 - [TileLang](https://github.com/tile-ai/tilelang): benchmark figures grouped by workload and hardware, backed by detailed benchmark sources.
 
-The homepage uses the project's own artwork and measured data. The masthead is flat and compact; charts share a light background, restrained typography and three stable series colors. GPU and NPU have independent comparisons. Gray denotes the baseline, teal xpu-kernels and violet Triton.
-
-Each graph shows speedup relative to its own same-shape baseline. The four RMSNorm shapes include a small aligned input, an unaligned tail case, a larger row count and a large working set. The four mHC shapes span token counts and feature widths within the optimized dispatch range. Full matrices remain available through links under each graph.
-
-Raw latencies are not edited during plotting. `tools/render_homepage_charts.py` loads the benchmark JSONL, verifies the selected records and computes every bar. `--check` compares the saved plot-data manifest to current measurements. Rebuild instructions are in [Benchmark and Profiler](benchmarking.md).
+See [visual asset notes](assets/IMAGE_PROMPTS.md) for the masthead and chart production record, and [Benchmark and Profiler](benchmarking.md) for reproduction commands.

@@ -6,6 +6,13 @@ def make_cuda_composed(x, weight, out, eps=1e-5):
 
     if not x.is_cuda:
         raise ValueError("the composed benchmark is GPU-only")
+    if out is None:
+        def allocating_call():
+            x32 = x.float()
+            variance = (x32*x32).mean(dim=-1,keepdim=True)
+            normalized = x32*torch.rsqrt(variance+eps)
+            return normalized.to(x.dtype)*weight
+        return allocating_call
     width = x.shape[-1]
     rows = x.numel() // width
     original = x.reshape(rows, width)

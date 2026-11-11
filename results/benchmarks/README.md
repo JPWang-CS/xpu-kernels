@@ -17,3 +17,13 @@ Only sanitized, compact JSONL and this schema note are intended for Git. Profile
 `mhc-post-backward-msprof.jsonl`: the same 16 shapes and two implementations, official msprof MIX_AIC Task Duration(us). Each row retains five post-warmup samples and links a compact public CSV preserving all25 launches, Task IDs, stream, shape and source row. Public performance tables use these kernel medians.
 
 The historical `mhc-post-backward-history.jsonl` and `mhc-post-backward-a1b-paired.jsonl` describe earlier private implementations; their predecessor columns are not the CANN mainline baseline. The initial migration Event file is retained as a separate installation/run record.
+
+## GPU mainline records
+
+`rmsnorm-gpu-mainline.jsonl`: BF16, 48 shapes and four implementations (`cuda`, `triton`, `torch` composition, and PyTorch `native`), 192 schema 4 records. Run with `--native-reference`; all four implementations allocate their output per call, matching the NPU native comparison policy. The GPU composition also creates its intermediate tensors per call. All implementation correctness checks passed.
+
+`mhc-post-backward-gpu-tilelang.jsonl`: BF16, the same 16 shape/dtype/distribution cases as the NPU matrix, one TileLang implementation and 16 Event records. Each device creates its own input tensors. Each record includes six-token FP64 golden samples, output allocation per call, 20 warmups, 10 batches and 50 calls per batch; all correctness checks passed.
+
+`mhc-post-backward-gpu-ncu.jsonl`: 16 per-shape NCU summaries for `mhc_post_bwd_cuda_kernel`, using kernel replay and `gpu__time_duration.sum`; each summary contains five measured samples after 20 warmups. [mhc-gpu-tilelang.csv](../../docs/performance/data/mhc-gpu-tilelang.csv) preserves all 400 warmup and measured launches across the 16 shapes. The NCU correctness samples and matching Event results passed.
+
+The combined absolute-latency figures are [RMSNorm](../../docs/assets/benchmark-rmsnorm.png) and [mHC Post Backward](../../docs/assets/benchmark-mhc.png). Their independent panels compare matching shape, dtype and input distribution on each device; each device generates its own random inputs. The [RMSNorm table](../../docs/performance/README.md) and [mHC table](../../docs/performance/mhc-post-backward.md) contain the full cross-device matrices. Historical benchmark JSONL files above remain unchanged.

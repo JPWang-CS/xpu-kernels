@@ -1,9 +1,9 @@
 """mHC post-backward Python API, golden, and supported scope.
 
-The NPU API supports Ascend 950, FP16/BF16, N=4, contiguous 3D [T,4,D]
-or 4D [B,S,4,D] tensors, 512 <= token count (T or B*S) <= 49152, and
-1 <= D <= 8192. Wider legacy/reference shapes are outside this first API
-scope. The golden remains available independently for small CPU/CUDA/NPU cases.
+Both backends accept contiguous 3D [T,4,D] or 4D [B,S,4,D] tensors,
+512 <= token count (T or B*S) <= 49152, and 1 <= D <= 8192.
+Ascend 950 supports FP16/BF16; CUDA uses the TileKernels BF16 implementation
+with D divisible by 128. An independent FP64 golden checks the equations.
 """
 
 from __future__ import annotations
@@ -87,15 +87,20 @@ def mhc_post_backward_native(grad_y, x, h_res, h_out, h_post):
 
 
 def mhc_post_backward(grad_y, x, h_res, h_out, h_post, out=None, *, implementation="auto"):
-    """Run mHC post backward on Ascend 950 within the supported scope."""
+    """Run mHC post backward on CUDA or Ascend 950."""
     torch, outputs = _validate(grad_y, x, h_res, h_out, h_post, out)
-    if x.device.type != "npu":
-        raise RuntimeError("mHC post backward requires an Ascend NPU; golden fallback is disabled")
+    if x.device.type not in ("npu", "cuda"):
+        raise RuntimeError("mHC post backward requires CUDA or NPU; golden fallback is disabled")
     token_count = x.shape[0] if x.ndim == 3 else x.shape[0] * x.shape[1]
     if not 512 <= token_count <= 49152:
-        raise ValueError("NPU implementation requires token count T (or B*S) in [512, 49152]")
+        raise ValueError("mHC requires token count T (or B*S) in [512, 49152]")
     if x.shape[-1] > 8192:
-        raise ValueError("NPU implementation requires 1 <= D <= 8192")
+        raise ValueError("mHC requires 1 <= D <= 8192")
+    if x.device.type == "cuda":
+        if implementation not in ("auto", "optimized", "tilelang"):
+            raise ValueError("GPU mHC implementation must be auto, optimized or tilelang")
+        from .backends.mhc_cuda import mhc_post_backward_cuda
+        return mhc_post_backward_cuda(grad_y, x, h_res, h_out, h_post, outputs)
     if implementation not in ("auto", "native", "optimized"):
         raise ValueError("implementation must be 'auto', 'native', or 'optimized'")
     eligible = optimized_scope(x)

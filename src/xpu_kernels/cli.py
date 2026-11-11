@@ -37,10 +37,10 @@ def _parser() -> argparse.ArgumentParser:
     build = commands.add_parser("build", help="build the selected native backend")
     build.add_argument("--backend", choices=("gpu", "npu"), required=True)
     build.add_argument("--force", action="store_true")
-    build.add_argument("--implementation", choices=("cuda", "triton", "auto", "native", "optimized"))
+    build.add_argument("--implementation", choices=("cuda", "triton", "auto", "native", "optimized", "tilelang"))
     example = commands.add_parser("example", help="run one RMSNorm correctness example")
     example.add_argument("--device", choices=("cuda", "npu"), required=True)
-    example.add_argument("--implementation", choices=("cuda", "triton", "ascendc", "auto", "native", "optimized"))
+    example.add_argument("--implementation", choices=("cuda", "triton", "ascendc", "auto", "native", "optimized", "tilelang"))
     example.add_argument("--shape", type=_csv_shapes)
     test = commands.add_parser("test", help="run golden and backend correctness cases")
     test.add_argument("--device", choices=("cuda", "npu"), required=True)
@@ -59,7 +59,7 @@ def _parser() -> argparse.ArgumentParser:
     profile.add_argument("--tool", choices=("msprof", "nsys", "ncu"), required=True)
     profile.add_argument("--output", type=Path, default=Path("results/profiles"))
     profile.add_argument("--shape", type=_csv_shapes)
-    profile.add_argument("--implementation", choices=("cuda", "triton", "ascendc", "auto", "native", "optimized"))
+    profile.add_argument("--implementation", choices=("cuda", "triton", "ascendc", "auto", "native", "optimized", "tilelang"))
     profile.add_argument("--dtype", choices=("float32", "bfloat16", "float16"), default="bfloat16")
     for command in (build, example, test, bench, profile):
         command.add_argument("--operator", choices=("rms_norm", "mhc_post_backward"), default="rms_norm")
@@ -292,8 +292,8 @@ def main(argv: list[str] | None = None) -> int:
         if getattr(args, "operator", None) == "mhc_post_backward":
             from .mhc_workload import run_cli
             return run_cli(args)
-        if getattr(args,"implementation",None) in ("auto","native","optimized"):
-            raise ValueError("auto/native/optimized implementations apply to mhc_post_backward")
+        if getattr(args,"implementation",None) in ("auto","native","optimized","tilelang"):
+            raise ValueError("auto/native/optimized/tilelang implementations apply to mhc_post_backward")
         if args.command in ("example", "profile") and args.shape is None:
             args.shape = [(4, 4096)] if args.command == "example" else [(16, 4096)]
         if args.command == "check-env":

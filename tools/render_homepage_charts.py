@@ -14,104 +14,90 @@ from render_native_comparisons import load, mhc_records, rms_records
 
 ASSETS = ROOT / "docs/assets"
 MANIFEST = ASSETS / "performance-chart-data.json"
-COLORS = {"baseline": "#94A3B8", "optimized": "#0D9488", "triton": "#7C3AED"}
+COLORS = {"npu_native":"#94A3B8","npu":"#0D9488","gpu":"#2563EB","triton":"#7C3AED","composed":"#D97706"}
 
 
 def chart_data():
     mhc, _ = mhc_records()
     rms, _ = rms_records()
-    gpu = load("rmsnorm-gpu-v2.jsonl", "torch.cuda.Event.elapsed_time", "rms_norm")
-    rms_shapes = ((128,4096), (129,4097), (1024,4096), (4096,8192))
-    specs = (
-        ("mhc", "mHC Post Backward", "NPU 950DT · BF16", "原生", "msprof · Task Duration",
-         mhc, ((2048,4,2560), (2048,4,6144), (8192,4,6144), (32768,4,6144)),
-         (("native","CANN 原生","baseline"),("optimized","xpu-kernels","optimized")), 4.0),
-        ("rms-gpu", "RMSNorm · GPU", "GPU L20X · BF16", "单算子拼接", "Event · Eager",
-         gpu, rms_shapes, (("torch","单算子拼接","baseline"),("cuda","xpu-kernels","optimized"),
-                          ("triton","Triton","triton")), 16.0),
-        ("rms-npu", "RMSNorm · NPU", "NPU 950DT · BF16", "原生", "Event · Eager",
-         rms, rms_shapes, (("native","CANN 原生","baseline"),("ascendc","xpu-kernels","optimized")), 1.5),
-    )
-    charts = []
-    for key, title, hardware, baseline, method, index, shapes, implementations, ymax in specs:
-        chart = {"id": key, "title": title, "hardware": hardware, "baseline": baseline,
-            "method": method, "metric": "baseline_latency / implementation_latency", "higher_is_better": True,
-            "ymax": ymax, "colors": COLORS, "cases": [], "series": []}
-        for impl, label, color in implementations:
-            chart["series"].append({"implementation": impl, "label": label, "color": COLORS[color]})
+    gpu_mhc = load("mhc-post-backward-gpu-ncu.jsonl", "Nsight Compute gpu__time_duration.sum", "mhc_post_backward")
+    gpu_rms = load("rmsnorm-gpu-mainline.jsonl", "torch.cuda.Event.elapsed_time", "rms_norm")
+    definitions = [
+        ("mhc", "mHC Post Backward", "BF16 · Kernel time · μs", [
+            (mhc,"native","NPU 950DT（原生）",COLORS["npu_native"]),
+            (mhc,"optimized","NPU 950DT（优化）",COLORS["npu"]),
+            (gpu_mhc,"tilelang","GPU L20X（TileLang）",COLORS["gpu"])],
+         ((2048,4,2560),(2048,4,6144),(8192,4,6144),(32768,4,6144))),
+        ("rmsnorm", "RMSNorm", "BF16 · Eager call time · μs", [
+            (rms,"native","NPU 950DT（原生）",COLORS["npu_native"]),
+            (rms,"ascendc","NPU 950DT（优化）",COLORS["npu"]),
+            (gpu_rms,"cuda","GPU L20X",COLORS["gpu"]),
+            (gpu_rms,"triton","GPU L20X（Triton）",COLORS["triton"]),
+            (gpu_rms,"torch","GPU L20X（单算子拼接）",COLORS["composed"])],
+         ((128,4096),(129,4097),(1024,4096),(4096,8192))),
+    ]
+    charts=[]
+    for key,title,method,series,shapes in definitions:
+        cases=[]
         for shape in shapes:
-            rows = [index[(shape,"bfloat16",impl)] for impl, _, _ in implementations]
-            if any(any(row[k] != rows[0][k] for k in ("hardware","torch","runtime","measurement_method")) for row in rows):
-                raise ValueError("incompatible chart measurements")
-            times = [r.get("latency_us_median", r.get("latency_ms_median",0)*1000) for r in rows]
-            speeds = [times[0]/t for t in times]
-            if any(not math.isfinite(v) or v <= 0 or v > ymax for v in speeds):
-                raise ValueError("invalid or clipped chart bar")
-            chart["cases"].append({"shape": list(shape), "latency_us": times, "speedup": speeds})
-        charts.append(chart)
-    return {"schema_version": 1, "sources": ["results/benchmarks/mhc-post-backward-msprof.jsonl",
-        "results/benchmarks/rmsnorm-gpu-v2.jsonl", "results/benchmarks/rmsnorm-npu-mainline.jsonl"],
-        "charts": charts}
+            rows=[index[(shape,"bfloat16",impl)] for index,impl,_,_ in series]
+            if any(r["correctness"]["status"]!="PASS" for r in rows):raise ValueError("unverified plot data")
+            values=[r.get("latency_us_median",r.get("latency_ms_median",0)*1000) for r in rows]
+            if any(not math.isfinite(v) or v<=0 for v in values):raise ValueError("invalid latency")
+            if key=="rmsnorm":
+                for r in rows:
+                    if r["schema_version"]!=4 or r["output_allocation"]["strategy"]=="preallocated_out":
+                        raise ValueError("RMSNorm device comparison requires per-call output allocation")
+            cases.append({"shape":list(shape),"latency_us":values})
+        charts.append({"id":key,"title":title,"method":method,"dtype":"bfloat16",
+            "metric":"absolute_latency_us","lower_is_better":True,
+            "series":[{"implementation":impl,"label":label,"color":color} for _,impl,label,color in series],"cases":cases})
+    return {"schema_version":2,"sources":["results/benchmarks/mhc-post-backward-msprof.jsonl",
+        "results/benchmarks/mhc-post-backward-gpu-ncu.jsonl","results/benchmarks/rmsnorm-npu-mainline.jsonl",
+        "results/benchmarks/rmsnorm-gpu-mainline.jsonl"],"charts":charts}
 
 
-def plot(data, font_path=None):
-    os.environ.setdefault("MPLCONFIGDIR", str(ROOT / "cache/matplotlib"))
+def plot(data,font_path=None):
+    os.environ.setdefault("MPLCONFIGDIR",str(ROOT/"cache/matplotlib"))
     import matplotlib
     matplotlib.use("Agg")
     from matplotlib import font_manager
     import matplotlib.pyplot as plt
-    from matplotlib.ticker import MultipleLocator, FuncFormatter
-
-    if font_path is None:
-        candidate = Path("C:/Windows/Fonts/msyh.ttc")
-        if candidate.is_file():
-            font_path = candidate
+    from matplotlib.patches import Patch
+    from matplotlib.ticker import MaxNLocator
+    if font_path is None and Path("C:/Windows/Fonts/msyh.ttc").is_file():font_path=Path("C:/Windows/Fonts/msyh.ttc")
     if font_path:
         font_manager.fontManager.addfont(str(font_path))
-        family = font_manager.FontProperties(fname=str(font_path)).get_name()
+        family=font_manager.FontProperties(fname=str(font_path)).get_name()
     else:
-        family = next((f.name for f in font_manager.fontManager.ttflist
-                       if f.name in ("Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei")), None)
-        if family is None:
-            raise RuntimeError("provide a Chinese font with --font /path/to/font.otf")
-    plt.rcParams.update({"font.family": [family,"DejaVu Sans"], "font.size": 13,
-        "axes.unicode_minus": False, "svg.fonttype": "none"})
-    ASSETS.mkdir(parents=True, exist_ok=True)
+        family=next((f.name for f in font_manager.fontManager.ttflist if f.name in
+            ("Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei")),None)
+        if family is None:raise RuntimeError("provide a Chinese font using --font")
+    plt.rcParams.update({"font.family":[family,"DejaVu Sans"],"font.size":13,"axes.unicode_minus":False})
     for chart in data["charts"]:
-        fig = plt.figure(figsize=(14,4.8), dpi=160, facecolor="#FAFCFE")
-        ax = fig.add_axes([0.075,0.20,0.90,0.54], facecolor="#FAFCFE")
-        ax.set_axisbelow(True)
-        ax.grid(axis="y", color="#E2E8F0", linewidth=0.7)
-        for side in ("top","right","left"):
-            ax.spines[side].set_visible(False)
-        ax.spines["bottom"].set_color("#CBD5E1")
-        ax.tick_params(axis="both", length=0, colors="#475569", pad=10)
-        ax.set_ylim(0, chart["ymax"])
-        ax.set_xlim(-0.5, len(chart["cases"])-0.5)
-        ax.yaxis.set_major_locator(MultipleLocator(0.5 if chart["id"]=="rms-npu" else 2 if chart["id"]=="rms-gpu" else 1))
-        ax.yaxis.set_major_formatter(FuncFormatter(lambda value, _: f"{value:g}×"))
-        ax.axhline(1, color="#64748B", linewidth=1.0, linestyle=(0,(3,4)), zorder=1)
-        count = len(chart["series"])
-        width = 0.20 if count == 3 else 0.25
-        for j, series in enumerate(chart["series"]):
-            positions = [i+(j-(count-1)/2)*width for i in range(len(chart["cases"]))]
-            values = [case["speedup"][j] for case in chart["cases"]]
-            bars = ax.bar(positions, values, width*0.88, color=series["color"],
-                label=series["label"], zorder=3)
-            for rect, value in zip(bars, values):
-                ax.annotate(f"{value:.2f}×", (rect.get_x()+rect.get_width()/2, value),
-                    xytext=(0,6), textcoords="offset points", ha="center", va="bottom",
-                    fontsize=12.5, color="#0F172A", fontweight="medium")
-        labels = [" × ".join(map(str,c["shape"])) for c in chart["cases"]]
-        ax.set_xticks(range(len(labels)), labels, fontsize=13)
-        fig.text(0.075,0.92,chart["title"], fontsize=23, color="#0F172A", fontweight="bold")
-        fig.text(0.075,0.835,chart["hardware"], fontsize=13, color="#64748B")
-        ax.legend(loc="lower right", bbox_to_anchor=(1.0,1.11), ncol=count,
-            frameon=False, handlelength=1.0, handleheight=0.85, columnspacing=1.6, fontsize=13)
-        fig.text(0.075,0.045,f"相对{chart['baseline']}的加速比 · 越高越快", fontsize=12, color="#475569")
-        fig.text(0.975,0.045,chart["method"], ha="right", fontsize=12, color="#64748B")
-        fig.savefig(ASSETS/f"benchmark-{chart['id']}.png", dpi=160, facecolor=fig.get_facecolor(),
-            metadata={"Software":"xpu-kernels benchmark renderer"})
+        fig,axes=plt.subplots(2,2,figsize=(14,8),dpi=160,facecolor="#FAFCFE")
+        fig.subplots_adjust(left=.075,right=.975,top=.73,bottom=.08,wspace=.20,hspace=.44)
+        fig.text(.075,.945,chart["title"],fontsize=24,fontweight="bold",color="#0F172A")
+        fig.text(.075,.897,chart["method"],fontsize=13,color="#64748B")
+        handles=[Patch(facecolor=s["color"],label=s["label"]) for s in chart["series"]]
+        fig.legend(handles=handles,loc="upper left",bbox_to_anchor=(.067,.865),ncol=3,
+            frameon=False,fontsize=12.5,handlelength=1.0,columnspacing=1.8)
+        for ax,case in zip(axes.flat,chart["cases"]):
+            ax.set_facecolor("#FAFCFE")
+            ax.set_axisbelow(True);ax.grid(axis="y",color="#E2E8F0",linewidth=.7)
+            for side in ("top","right","left"):ax.spines[side].set_visible(False)
+            ax.spines["bottom"].set_color("#CBD5E1")
+            ax.tick_params(axis="both",length=0,labelcolor="#64748B")
+            bars=ax.bar(range(len(chart["series"])),case["latency_us"],width=.60,color=[s["color"] for s in chart["series"]],zorder=3)
+            ax.set_ylim(0,max(case["latency_us"])*1.26);ax.set_xticks([])
+            ax.yaxis.set_major_locator(MaxNLocator(nbins=4,min_n_ticks=3))
+            ax.set_ylabel("μs",color="#64748B",fontsize=12)
+            ax.set_title(" × ".join(map(str,case["shape"])),loc="left",pad=12,fontsize=14,color="#0F172A")
+            for rect,value in zip(bars,case["latency_us"]):
+                ax.annotate(f"{value:.2f}",(rect.get_x()+rect.get_width()/2,value),
+                    xytext=(0,5),textcoords="offset points",ha="center",va="bottom",fontsize=11.5,color="#0F172A")
+        fig.text(.075,.02,"各面板使用独立刻度 · μs/次 · 越低越快",fontsize=11,color="#64748B")
+        fig.savefig(ASSETS/f"benchmark-{chart['id']}.png",dpi=160,facecolor=fig.get_facecolor(),metadata={"Software":"xpu-kernels benchmark renderer"})
         plt.close(fig)
 
 
@@ -131,7 +117,7 @@ def main():
     else:
         plot(data, args.font)
         MANIFEST.write_text(json.dumps(data,ensure_ascii=False,indent=2)+"\n", encoding="utf-8")
-    print("Three charts match 12 shape groups and 28 implementation measurements")
+    print("Two absolute-time charts match eight shape groups and32 device measurements")
 
 
 if __name__ == "__main__":

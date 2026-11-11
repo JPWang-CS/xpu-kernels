@@ -110,7 +110,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    path = ROOT / "docs/performance/README.md"
+    path = ROOT / "docs/performance/rmsnorm-preallocated.md"
     content = render()
     if args.check:
         if path.read_text(encoding="utf-8") != content:

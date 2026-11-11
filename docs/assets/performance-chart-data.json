@@ -1,25 +1,36 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "sources": [
     "results/benchmarks/mhc-post-backward-msprof.jsonl",
-    "results/benchmarks/rmsnorm-gpu-v2.jsonl",
-    "results/benchmarks/rmsnorm-npu-mainline.jsonl"
+    "results/benchmarks/mhc-post-backward-gpu-ncu.jsonl",
+    "results/benchmarks/rmsnorm-npu-mainline.jsonl",
+    "results/benchmarks/rmsnorm-gpu-mainline.jsonl"
   ],
   "charts": [
     {
       "id": "mhc",
       "title": "mHC Post Backward",
-      "hardware": "NPU 950DT · BF16",
-      "baseline": "原生",
-      "method": "msprof · Task Duration",
-      "metric": "baseline_latency / implementation_latency",
-      "higher_is_better": true,
-      "ymax": 4.0,
-      "colors": {
-        "baseline": "#94A3B8",
-        "optimized": "#0D9488",
-        "triton": "#7C3AED"
-      },
+      "method": "BF16 · Kernel time · μs",
+      "dtype": "bfloat16",
+      "metric": "absolute_latency_us",
+      "lower_is_better": true,
+      "series": [
+        {
+          "implementation": "native",
+          "label": "NPU 950DT（原生）",
+          "color": "#94A3B8"
+        },
+        {
+          "implementation": "optimized",
+          "label": "NPU 950DT（优化）",
+          "color": "#0D9488"
+        },
+        {
+          "implementation": "tilelang",
+          "label": "GPU L20X（TileLang）",
+          "color": "#2563EB"
+        }
+      ],
       "cases": [
         {
           "shape": [
@@ -29,11 +40,8 @@
           ],
           "latency_us": [
             125.43,
-            43.167
-          ],
-          "speedup": [
-            1.0,
-            2.9056918479393983
+            43.167,
+            41.12
           ]
         },
         {
@@ -44,11 +52,8 @@
           ],
           "latency_us": [
             295.689,
-            89.442
-          ],
-          "speedup": [
-            1.0,
-            3.3059300999530428
+            89.442,
+            93.056
           ]
         },
         {
@@ -59,11 +64,8 @@
           ],
           "latency_us": [
             1174.6,
-            439.071
-          ],
-          "speedup": [
-            1.0,
-            2.675193761373445
+            439.071,
+            337.216
           ]
         },
         {
@@ -74,139 +76,46 @@
           ],
           "latency_us": [
             4678.831,
-            1736.369
-          ],
-          "speedup": [
-            1.0,
-            2.6946063883886433
+            1736.369,
+            1330.08
           ]
         }
-      ],
+      ]
+    },
+    {
+      "id": "rmsnorm",
+      "title": "RMSNorm",
+      "method": "BF16 · Eager call time · μs",
+      "dtype": "bfloat16",
+      "metric": "absolute_latency_us",
+      "lower_is_better": true,
       "series": [
         {
           "implementation": "native",
-          "label": "CANN 原生",
+          "label": "NPU 950DT（原生）",
           "color": "#94A3B8"
         },
         {
-          "implementation": "optimized",
-          "label": "xpu-kernels",
+          "implementation": "ascendc",
+          "label": "NPU 950DT（优化）",
           "color": "#0D9488"
-        }
-      ]
-    },
-    {
-      "id": "rms-gpu",
-      "title": "RMSNorm · GPU",
-      "hardware": "GPU L20X · BF16",
-      "baseline": "单算子拼接",
-      "method": "Event · Eager",
-      "metric": "baseline_latency / implementation_latency",
-      "higher_is_better": true,
-      "ymax": 16.0,
-      "colors": {
-        "baseline": "#94A3B8",
-        "optimized": "#0D9488",
-        "triton": "#7C3AED"
-      },
-      "cases": [
-        {
-          "shape": [
-            128,
-            4096
-          ],
-          "latency_us": [
-            36.48607969284058,
-            7.010560035705566,
-            16.200639605522156
-          ],
-          "speedup": [
-            1.0,
-            5.204445794203729,
-            2.2521382230121287
-          ]
-        },
-        {
-          "shape": [
-            129,
-            4097
-          ],
-          "latency_us": [
-            37.84128069877625,
-            7.268480062484741,
-            16.59359991550446
-          ],
-          "speedup": [
-            1.0,
-            5.206216481777092,
-            2.28047445349208
-          ]
-        },
-        {
-          "shape": [
-            1024,
-            4096
-          ],
-          "latency_us": [
-            82.18143939971924,
-            9.518400132656097,
-            16.288320422172546
-          ],
-          "speedup": [
-            1.0,
-            8.633955103207729,
-            5.045421336864751
-          ]
-        },
-        {
-          "shape": [
-            4096,
-            8192
-          ],
-          "latency_us": [
-            493.19263458251953,
-            58.52223873138428,
-            37.06560015678406
-          ],
-          "speedup": [
-            1.0,
-            8.427439641300504,
-            13.305939536830925
-          ]
-        }
-      ],
-      "series": [
-        {
-          "implementation": "torch",
-          "label": "单算子拼接",
-          "color": "#94A3B8"
         },
         {
           "implementation": "cuda",
-          "label": "xpu-kernels",
-          "color": "#0D9488"
+          "label": "GPU L20X",
+          "color": "#2563EB"
         },
         {
           "implementation": "triton",
-          "label": "Triton",
+          "label": "GPU L20X（Triton）",
           "color": "#7C3AED"
+        },
+        {
+          "implementation": "torch",
+          "label": "GPU L20X（单算子拼接）",
+          "color": "#D97706"
         }
-      ]
-    },
-    {
-      "id": "rms-npu",
-      "title": "RMSNorm · NPU",
-      "hardware": "NPU 950DT · BF16",
-      "baseline": "原生",
-      "method": "Event · Eager",
-      "metric": "baseline_latency / implementation_latency",
-      "higher_is_better": true,
-      "ymax": 1.5,
-      "colors": {
-        "baseline": "#94A3B8",
-        "optimized": "#0D9488",
-        "triton": "#7C3AED"
-      },
+      ],
       "cases": [
         {
           "shape": [
@@ -215,11 +124,10 @@
           ],
           "latency_us": [
             15.862579941749573,
-            12.783010005950928
-          ],
-          "speedup": [
-            1.0,
-            1.2409111730621347
+            12.783010005950928,
+            9.365440011024475,
+            18.76031994819641,
+            48.10431957244873
           ]
         },
         {
@@ -229,11 +137,10 @@
           ],
           "latency_us": [
             15.948870182037354,
-            13.246529698371887
-          ],
-          "speedup": [
-            1.0,
-            1.2040036556893545
+            13.246529698371887,
+            8.976000249385832,
+            18.483519554138184,
+            44.364800453186035
           ]
         },
         {
@@ -243,11 +150,10 @@
           ],
           "latency_us": [
             15.910120010375978,
-            26.54088020324707
-          ],
-          "speedup": [
-            1.0,
-            0.5994571351265697
+            26.54088020324707,
+            9.908800125122072,
+            18.62048029899597,
+            79.57695960998535
           ]
         },
         {
@@ -257,24 +163,11 @@
           ],
           "latency_us": [
             35.430530309677124,
-            143.90450954437256
-          ],
-          "speedup": [
-            1.0,
-            0.24620861724108942
+            143.90450954437256,
+            58.61760139465331,
+            37.137280702590935,
+            491.5849494934082
           ]
-        }
-      ],
-      "series": [
-        {
-          "implementation": "native",
-          "label": "CANN 原生",
-          "color": "#94A3B8"
-        },
-        {
-          "implementation": "ascendc",
-          "label": "xpu-kernels",
-          "color": "#0D9488"
         }
       ]
     }

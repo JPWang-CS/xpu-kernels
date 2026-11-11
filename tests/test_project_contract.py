@@ -138,13 +138,13 @@ class ProjectContractTests(unittest.TestCase):
         second()
         self.assertEqual(calls, [("ascendc", first_out), ("other", second_out)])
 
-    def test_native_npu_pair_allocates_output_per_call_without_changing_default_or_gpu(self):
+    def test_native_pairs_allocate_per_call_and_preserve_default_policy(self):
         allocated = object()
         fake_torch = SimpleNamespace(empty_like=lambda x: allocated)
         x = object()
         self.assertIsNone(_benchmark_out(fake_torch, x, "npu", True))
         self.assertIs(_benchmark_out(fake_torch, x, "npu", False), allocated)
-        self.assertIs(_benchmark_out(fake_torch, x, "cuda", True), allocated)
+        self.assertIsNone(_benchmark_out(fake_torch, x, "cuda", True))
 
     @unittest.skipUnless(importlib.util.find_spec("torch") is not None, "PyTorch is not installed")
     def test_native_reference_applies_gamma_before_output_cast(self):

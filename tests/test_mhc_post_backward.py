@@ -112,5 +112,52 @@ class MhcNpuKernelTests(unittest.TestCase):
         self._check((2, 1024, 4, 6144), torch.bfloat16, non_default_stream=True)
 
 
+def _gpu_available():
+    if not HAS_TORCH or os.environ.get("XPU_KERNELS_TEST_DEVICE") != "cuda":
+        return False
+    if importlib.util.find_spec("tilelang") is None:
+        return False
+    import torch
+    return torch.cuda.is_available()
+
+
+@unittest.skipUnless(_gpu_available(), "CUDA device and TileLang are required")
+class MhcGpuKernelTests(unittest.TestCase):
+    def test_full_outputs_tnd_bsnd_and_non_default_stream(self):
+        import torch
+        from xpu_kernels.mhc_workload import inputs
+        from xpu_kernels import mhc_post_backward
+        from xpu_kernels.mhc_post_backward import mhc_post_backward_golden
+
+        for shape in ((512,4,2560),(513,4,2688),(2,256,4,6144)):
+            values=inputs(shape,"bfloat16","cuda")
+            expected=mhc_post_backward_golden(*values)
+            outputs=tuple(torch.empty_like(t) for t in (values[1],values[2],values[3],values[4]))
+            stream=torch.cuda.Stream()
+            stream.wait_stream(torch.cuda.current_stream())
+            with torch.cuda.stream(stream):
+                result=mhc_post_backward(*values,out=outputs)
+            stream.synchronize()
+            for i,(a,b) in enumerate(zip(result,expected)):
+                self.assertIs(a,outputs[i])
+                torch.testing.assert_close(a,b,rtol=0.003 if i in (1,3) else 0.01,
+                    atol=0.003 if i in (1,3) else 0.02)
+
+    def test_device_scope_and_output_alias_checks(self):
+        import torch
+        from xpu_kernels import mhc_post_backward
+        from xpu_kernels.mhc_workload import inputs
+        values=inputs((512,4,2560),"float16","cuda")
+        with self.assertRaisesRegex(ValueError,"BF16"):
+            mhc_post_backward(*values)
+        values=inputs((512,4,257),"bfloat16","cuda")
+        with self.assertRaisesRegex(ValueError,"divisible"):
+            mhc_post_backward(*values)
+        values=inputs((512,4,2560),"bfloat16","cuda")
+        bad=(values[1],torch.empty_like(values[2]),torch.empty_like(values[3]),torch.empty_like(values[4]))
+        with self.assertRaisesRegex(ValueError,"overlap"):
+            mhc_post_backward(*values,out=bad)
+
+
 if __name__ == "__main__":
     unittest.main()

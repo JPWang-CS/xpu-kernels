@@ -105,7 +105,7 @@ def _make_kernel_call(rms_norm, implementation: str, x, weight, out):
 
 
 def _benchmark_out(torch, x, device: str, include_native_baseline: bool):
-    if device == "npu" and include_native_baseline:
+    if include_native_baseline:
         return None
     return torch.empty_like(x)
 
@@ -170,7 +170,7 @@ def run_benchmark(
                 cases = []
                 native_info = {"status": "not_requested"}
                 for implementation in selected:
-                    allocate_output_per_call = include_native_baseline and device == "npu"
+                    allocate_output_per_call = include_native_baseline
                     out = _benchmark_out(torch, x, device, include_native_baseline)
                     if implementation == "torch":
                         op = make_cuda_composed(x, weight, out)
@@ -184,7 +184,11 @@ def run_benchmark(
                         max_abs = (actual.float()-expected.float()).abs().max().item()
                     cases.append((implementation, op, max_abs, {
                         "strategy": "out_none_per_call" if allocate_output_per_call else "preallocated_out",
-                        "api_call": "rms_norm(out=None)" if allocate_output_per_call else "rms_norm(out=preallocated)",
+                        "api_call": (
+                            "make_cuda_composed(out=None)" if allocate_output_per_call and implementation == "torch"
+                            else "rms_norm(out=None)" if allocate_output_per_call
+                            else "rms_norm(out=preallocated)"
+                        ),
                         "event_timing_note": (
                             "torch.npu.Event measures device-stream elapsed time; CPU submission gaps may appear in the interval, "
                             "and host output-allocation time is not isolated."

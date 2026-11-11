@@ -16,10 +16,10 @@ SHAPES = tuple((t, 4, d) for t in (2048, 8192, 32768) for d in (2560, 5120, 6144
     (2, 1024, 4, 6144), (3, 1024, 4, 6144), (2, 4096, 4, 6144), (3, 8192, 4, 6144))
 
 
-def inputs(shape, dtype_name):
+def inputs(shape, dtype_name, device="npu"):
     import torch
     from .environment import require_device
-    require_device("npu")
+    require_device(device)
     shape = tuple(shape)
     if len(shape) == 2:
         shape = (shape[0], 4, shape[1])
@@ -28,11 +28,11 @@ def inputs(shape, dtype_name):
     torch.manual_seed(5341)
     dtype = getattr(torch, dtype_name)
     lead, width = shape[:-2], shape[-1]
-    x = torch.randn(shape, device="npu", dtype=dtype)
+    x = torch.randn(shape, device=device, dtype=dtype)
     return (torch.randn_like(x), x,
-            torch.randn((*lead, 4, 4), device="npu", dtype=torch.float32),
-            torch.randn((*lead, width), device="npu", dtype=dtype),
-            torch.randn((*lead, 4), device="npu", dtype=torch.float32))
+            torch.randn((*lead, 4, 4), device=device, dtype=torch.float32),
+            torch.randn((*lead, width), device=device, dtype=dtype),
+            torch.randn((*lead, 4), device=device, dtype=torch.float32))
 
 
 def check_case(values, implementation="auto"):
@@ -50,7 +50,7 @@ def check_case(values, implementation="auto"):
     reference = mhc_post_backward_golden(*small)
     actual_sample = (actual[0].reshape(tokens,4,-1)[indices], actual[1].reshape(tokens,4,4)[indices],
                      actual[2].reshape(tokens,-1)[indices], actual[3].reshape(tokens,4)[indices])
-    torch.npu.synchronize()
+    (torch.cuda if values[0].is_cuda else torch.npu).synchronize()
     errors = []
     for i, (a, b) in enumerate(zip(actual_sample, reference)):
         rtol, atol = ((1e-2, 2e-2) if a.dtype == torch.bfloat16 else (3e-3, 3e-3)) if i in (0, 2) else (3e-3, 3e-3)
@@ -60,16 +60,27 @@ def check_case(values, implementation="auto"):
     return actual, errors
 
 
+def runtime_info(device):
+    if device == "cuda":
+        import torch, tilelang
+        return {"cuda":torch.version.cuda,"tilelang":tilelang.__version__,
+                "compute_capability":list(torch.cuda.get_device_capability())}
+    import torch_npu
+    from .bench import _cann_version
+    return {"torch_npu":torch_npu.__version__,"cann_version":_cann_version()}
+
+
 def benchmark(args):
     import torch
-    import torch_npu
-    from .bench import _event_samples, _cann_version
+    from .bench import _event_samples
     from .cli import _root
     from .mhc_post_backward import mhc_post_backward
     shapes = args.shapes or SHAPES
-    implementations = tuple((args.implementations or "native,optimized").split(","))
-    if any(i not in ("auto", "native", "optimized") for i in implementations):
-        raise ValueError("mHC implementations: native,optimized or auto")
+    device = args.device
+    module = torch.cuda if device == "cuda" else torch.npu
+    implementations = tuple((args.implementations or ("tilelang" if device=="cuda" else "native,optimized")).split(","))
+    if any(i not in (("auto","optimized","tilelang") if device=="cuda" else ("auto","native","optimized")) for i in implementations):
+        raise ValueError(f"unsupported mHC implementations for {device}: {implementations}")
     dtypes = ("bfloat16",) if args.dtypes == "float32,bfloat16,float16" else tuple(args.dtypes.split(","))
     if any(d not in ("float16", "bfloat16") for d in dtypes):
         raise ValueError("mHC backward supports FP16/BF16")
@@ -79,29 +90,29 @@ def benchmark(args):
     with torch.inference_mode():
         for shape in shapes:
             for dtype in dtypes:
-                values = inputs(shape, dtype)
+                values = inputs(shape, dtype, device)
                 for implementation in implementations:
                     out, errors = check_case(values, implementation)
                     del out
                     # Both native and optimized allocate their outputs inside each call.
                     op = lambda: mhc_post_backward(*values, implementation=implementation)
-                    samples = _event_samples(op, torch.npu, torch.npu.current_stream(), args.warmup, args.batches, args.iterations_per_batch)
+                    samples = _event_samples(op, module, module.current_stream(), args.warmup, args.batches, args.iterations_per_batch)
                     row = dict(schema_version=1, operator="mhc_post_backward", implementation=implementation,
-                        timestamp_utc=datetime.now(timezone.utc).isoformat(), hardware=torch.npu.get_device_name(),
-                        device="npu", device_index=torch.npu.current_device(), shape=list(values[1].shape), dtype=dtype,
-                        h_res=True, measurement_method="torch.npu.Event.elapsed_time",
+                        timestamp_utc=datetime.now(timezone.utc).isoformat(), hardware=module.get_device_name(),
+                        device=device, device_index=module.current_device(), shape=list(values[1].shape), dtype=dtype,
+                        h_res=True, measurement_method=f"torch.{device}.Event.elapsed_time",
                         measurement_scope="device_stream_elapsed_per_call", execution_mode="eager", graph_capture=False,
                         allocation="both implementations allocate outputs per call", cache_policy="same-buffer steady state",
                         warmup_iterations=args.warmup, batches=args.batches, iterations_per_batch=args.iterations_per_batch,
                         latency_ms_median=statistics.median(samples), latency_ms_samples=samples,
                         correctness={"status":"PASS", "reference":"CPU FP64 explicit equations, six boundary/interior token samples", "outputs":errors},
                         python=platform.python_version(), torch=torch.__version__,
-                        runtime={"torch_npu":torch_npu.__version__,"cann_version":_cann_version()},
-                        native_api="torch_npu.npu_mhc_post_backward -> aclnnMhcPostBackward")
+                        runtime=runtime_info(device),
+                        source_api=("DeepSeek TileKernels mhc_post_bwd_cuda" if device=="cuda" else "torch_npu.npu_mhc_post_backward -> aclnnMhcPostBackward"))
                     rows.append(row)
                     print(f"PASS {list(values[1].shape)} {dtype} {implementation}: {row['latency_ms_median']*1000:.3f} us",flush=True)
                 del values
-                torch.npu.synchronize()
+                module.synchronize()
     output = args.output or (_root()/"results/benchmarks"/f"mhc-post-backward-{datetime.now(timezone.utc):%Y%m%dT%H%M%S}.jsonl")
     if not output.is_absolute():
         output = _root()/output
@@ -113,35 +124,39 @@ def benchmark(args):
 
 def run_cli(args):
     from .environment import require_device
-    device = getattr(args, "device", None)
-    if getattr(args,"backend",None) == "gpu" or (device is not None and device != "npu"):
-        raise ValueError("mHC post backward currently has an Ascend 950 implementation")
-    require_device("npu")
+    device = getattr(args, "device", None) or ("cuda" if getattr(args,"backend",None)=="gpu" else "npu")
+    require_device(device)
     implementation=getattr(args,"implementation",None) or "auto"
-    if implementation not in ("auto","native","optimized"):
-        raise ValueError("mHC --implementation accepts auto, native or optimized")
+    allowed = ("auto","optimized","tilelang") if device=="cuda" else ("auto","native","optimized")
+    if implementation not in allowed:
+        raise ValueError(f"mHC {device} implementations: {allowed}")
     if args.command == "build":
-        from .backends.npu import _load_extension
-        print(_load_extension().__file__)
+        # TileLang specializes on the first actual shape; compile one verified example.
+        if device=="cuda":
+            check_case(inputs((512,4,2560),"bfloat16",device),implementation)
+            print("GPU mHC compiled and executed")
+        else:
+            from .backends.npu import _load_extension
+            print(_load_extension().__file__)
         return 0
     if args.command == "example":
         import torch
         shape = (args.shape or [(512,4,2560)])[0]
         with torch.inference_mode():
-            for dtype in ("float16","bfloat16"):
-                _, errors = check_case(inputs(shape,dtype),implementation)
+            for dtype in (("bfloat16",) if device=="cuda" else ("float16","bfloat16")):
+                _, errors = check_case(inputs(shape,dtype,device),implementation)
                 print(json.dumps({"status":"PASS","shape":shape,"dtype":dtype,"outputs":errors}))
         return 0
     if args.command == "test":
         from .cli import _root
-        env=os.environ.copy();env["XPU_KERNELS_TEST_DEVICE"]="npu"
+        env=os.environ.copy();env["XPU_KERNELS_TEST_DEVICE"]=device
         result=subprocess.run([sys.executable,"-m","unittest","discover","-s","tests","-p","test_mhc_post_backward.py","-v"],cwd=_root(),env=env,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
         print(result.stdout,end="")
         if result.returncode:
             return result.returncode
-        # Device pass requires an actual NPU case rather than only CPU references.
+        # Device acceptance requires the selected backend's kernel tests to execute.
         lines=result.stdout.splitlines()
-        starts=[i for i,line in enumerate(lines) if "MhcNpuKernelTests" in line and line.startswith("test_")]
+        starts=[i for i,line in enumerate(lines) if ("MhcGpuKernelTests" if device=="cuda" else "MhcNpuKernelTests") in line and line.startswith("test_")]
         passed=0
         for start in starts:
             case=[]
@@ -159,17 +174,26 @@ def run_cli(args):
         return benchmark(args)
     if args.command == "profile":
         from .cli import _root, _profile_command, _profile_subprocess_env
-        if args.tool != "msprof":
-            raise ValueError("NPU mHC profiling uses msprof")
-        binary=shutil.which("msprof")
-        if not binary:raise RuntimeError("msprof is not available")
-        shape=(args.shape or [(1024,4,2560)])[0]
-        check_case(inputs(shape,args.dtype),implementation)
+        shape=(args.shape or [(2048,4,2560)])[0]
+        check_case(inputs(shape,args.dtype,device),implementation)
         output=args.output if args.output.is_absolute() else _root()/args.output
         output.mkdir(parents=True,exist_ok=True)
-        workload=[sys.executable,"-m","xpu_kernels.mhc_workload","--shape","x".join(map(str,shape)),"--dtype",args.dtype,"--implementation",implementation]
-        help_text=subprocess.run([binary,"--help"],text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT).stdout
-        command=_profile_command("msprof",binary,output,workload,help_text)
+        workload=[sys.executable,"-m","xpu_kernels.mhc_workload","--device",device,"--shape","x".join(map(str,shape)),
+                  "--dtype",args.dtype,"--implementation",implementation]
+        binary=shutil.which(args.tool)
+        if not binary:
+            raise RuntimeError(f"{args.tool} was not found")
+        if device=="cuda" and args.tool=="ncu":
+            command=[binary,"--kernel-name","regex:mhc_post_bwd_cuda_kernel","--launch-skip","20","--launch-count","1",
+                "--replay-mode","kernel","--cache-control","none","--clock-control","none",
+                "--section","SpeedOfLight","--section","LaunchStats","--export",str(output/"mhc"),*workload]
+        elif device=="cuda" and args.tool=="nsys":
+            command=_profile_command("nsys",binary,output,workload)
+        elif device=="npu" and args.tool=="msprof":
+            help_text=subprocess.run([binary,"--help"],text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT).stdout
+            command=_profile_command("msprof",binary,output,workload,help_text)
+        else:
+            raise ValueError(f"{args.tool} does not profile {device}")
         print("PROFILE_COMMAND="+json.dumps(command))
         return subprocess.run(command,cwd=_root(),env=_profile_subprocess_env()).returncode
     raise ValueError(f"unsupported command {args.command}")
@@ -177,26 +201,30 @@ def run_cli(args):
 
 def main():
     import torch
+    from .environment import require_device
     from .mhc_post_backward import mhc_post_backward
     parser=argparse.ArgumentParser()
-    parser.add_argument("--shape",default="1024x4x2560")
+    parser.add_argument("--device",choices=("cuda","npu"),default="npu")
+    parser.add_argument("--shape",default="2048x4x2560")
     parser.add_argument("--dtype",choices=("float16","bfloat16"),default="bfloat16")
-    parser.add_argument("--implementation",choices=("auto","native","optimized"),default="auto")
+    parser.add_argument("--implementation",choices=("auto","native","optimized","tilelang"),default="auto")
     parser.add_argument("--matrix", action="store_true", help="profile the optimized-scope shape matrix")
     parser.add_argument("--profile-warmup", type=int, default=20)
     parser.add_argument("--profile-repeats", type=int, default=5)
     args=parser.parse_args()
     if args.profile_warmup < 0 or args.profile_repeats < 1:
         parser.error("invalid profile iteration count")
+    require_device(args.device)
+    module = torch.cuda if args.device=="cuda" else torch.npu
     with torch.inference_mode():
         shapes = SHAPES if args.matrix else (tuple(map(int,args.shape.split("x"))),)
         for shape in shapes:
-            values = inputs(shape, args.dtype)
+            values = inputs(shape, args.dtype, args.device)
             print("PROFILE_CASE="+json.dumps({"shape":shape, "implementation":args.implementation,
-                "warmup":args.profile_warmup, "samples":args.profile_repeats}), flush=True)
+                "warmup":args.profile_warmup, "samples":args.profile_repeats,"device":args.device}), flush=True)
             for _ in range(args.profile_warmup + args.profile_repeats):
                 result = mhc_post_backward(*values, implementation=args.implementation)
-                torch.npu.synchronize()
+                module.synchronize()
                 del result
             del values
     print("MHC_PROFILE_COMPLETE",flush=True)

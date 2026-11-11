@@ -6,10 +6,12 @@
 
 Prompt: A restrained academic/open-source kernel library masthead, near-white background #FAFCFE, crisp flat editorial art, no shadows, cards, 3D chips or neon. Exact wordmark “xpu-kernels”; subtitle “GPU / NPU Kernel Library”; line “CUDA · Triton · Ascend C”. An abstract X from square matrix tiles and thin grids at the right, using teal #0D9488, violet #7C3AED and slate #94A3B8. Generous whitespace, precise alignment and a thin bottom divider.
 
-## Performance plots
+## Performance charts
 
-`benchmark-mhc.png`, `benchmark-rms-gpu.png`, and `benchmark-rms-npu.png` are exact-data charts rendered by Matplotlib via `tools/render_homepage_charts.py`. They replace the previous numeric-card illustrations. Plot values, hardware, metric, labels, colors and selected shapes are stored in `performance-chart-data.json` and checked against the original benchmark JSONL.
+`benchmark-rmsnorm.png` and `benchmark-mhc.png` are the combined, exact-data figures rendered by `tools/render_homepage_charts.py`. The renderer reads committed benchmark JSONL and stores selected shapes, labels, hardware, units and values in `performance-chart-data.json` for `--check` validation.
 
-Each plot uses a linear zero-based axis, fixed per-series colors and a visible1x reference. Bar height is baseline latency divided by implementation latency. Labels round to two decimals while bar geometry uses the full ratio. The NPU RMSNorm plot retains cases below1x. Detailed documents retain absolute timings and measurement conditions.
+Both figures show absolute latency in microseconds on linear axes starting at zero. Each figure has four independent shape panels; every panel compares the selected implementations on both devices for that shape. The RMSNorm figure uses per-call CUDA/NPU Event measurements with output allocation on every call. It shows NPU native and xpu-kernels implementations, plus GPU CUDA, Triton and single-op composition. The GPU RMSNorm dataset also includes PyTorch native measurements for the full 48-shape, four-implementation record set.
 
-[Rendering and validation](../benchmarking.md#更新首页图表) · [Design references](../homepage-design.md)
+The mHC figure shows GPU TileLang NCU kernel duration alongside NPU CANN native and optimized msprof `Task Duration(us)`. It compares the same four selected shapes, dtype and input distribution on each device; each device generates its own inputs. Event call intervals and kernel duration remain distinct metrics.
+
+[Rendering and validation](../benchmarking.md#5-记录与图表) · [Homepage structure and chart design](../homepage-design.md)

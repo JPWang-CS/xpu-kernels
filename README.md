@@ -2,71 +2,23 @@
 
 <img src="docs/assets/xpu-kernels-masthead.png" alt="xpu-kernels — GPU / NPU Kernel Library" width="640" />
 
-[快速开始](#quick-start) &nbsp;·&nbsp; [算子](#kernels) &nbsp;·&nbsp; [性能](#benchmarks) &nbsp;·&nbsp; [文档](#documentation) &nbsp;·&nbsp; [AI Skill](skills/xpu-kernels/SKILL.md)
+[安装与使用](#quick-start) &nbsp;·&nbsp; [算子](#operators) &nbsp;·&nbsp; [性能](#benchmarks) &nbsp;·&nbsp; [复现](docs/benchmarking.md)
 
 </div>
 
-NVIDIA GPU 与昇腾 NPU 算子库，提供统一 Python 接口、独立数值参考和可复现 benchmark。内核源码、正确性检查与设备采样随代码一起维护。
-
-<a id="kernels"></a>
-
-## Kernels
-
-| 算子 | GPU | NPU | 数据精度 | 文档 |
-|---|---|---|---|---|
-| **RMSNorm** | CUDA C++ / Triton | Ascend C | FP32 / FP16 / BF16 | [结果与数值约定](docs/performance/README.md) |
-| **mHC Post Backward** | — | Ascend C · Cube / Vector | BF16 优化，FP16 原生 | [公式、接口与适用范围](docs/operators/mhc-post-backward.md) |
-
-mHC 优化范围为 BF16、4 条残差流、h_res 存在，token 数 2048–49152，特征宽度为 2560、5120、6144 或 7168。其它受当前接口支持的输入调用 CANN 主线实现。
-
-<a id="benchmarks"></a>
-
-## Benchmarks
-
-<!-- BEGIN homepage-performance -->
-柱高为相对同 shape 基线的加速比，**1× 为基线，越高越快**。灰色为基线，青色为本库实现，紫色为 Triton。
-
-### mHC Post Backward
-
-![mHC Post Backward: CANN native versus xpu-kernels](docs/assets/benchmark-mhc.png)
-
-[16 个 shape 与采样](docs/performance/mhc-post-backward.md) · [原始数据](results/benchmarks/mhc-post-backward-msprof.jsonl)
-
-### RMSNorm
-
-![RMSNorm on GPU L20X: composition, xpu-kernels and Triton](docs/assets/benchmark-rms-gpu.png)
-
-![RMSNorm on NPU 950DT: CANN native versus xpu-kernels](docs/assets/benchmark-rms-npu.png)
-
-<sub>NPU 两种实现的中间舍入顺序不同，分别按对应公式检查。</sub>
-
-[GPU 完整结果](docs/performance/README.md) · [NPU 原生对照](docs/performance/rmsnorm-native.md)
-
-<details>
-<summary>测量条件与比较范围</summary>
-
-- **mHC / NPU 950DT**：BF16，基线为 CANN 9.2.0 B096 的主线算子。使用 msprof `Task Duration(us)`，预热 20 次，取 5 次正式采样中位数。展示的 shape 均在优化范围内。
-- **RMSNorm / GPU L20X**：BF16，基线为 GPU 单算子拼接。CUDA C++、Triton 和拼接使用相同数值顺序。
-- **RMSNorm / NPU 950DT**：BF16，基线为 CANN 原生实现。本库按 Pangu 的中间舍入顺序计算，两者分别对照对应公式；原生更快的 shape 同样保留。
-- RMSNorm 使用设备 Event / Eager，预热 20 次，10 批 × 50 次，取批均值的中位数。Event 区间包含 CPU 提交间隙。每张图在同一设备内比较。
-
-[复现方法](docs/benchmarking.md) · [图表数据](docs/assets/performance-chart-data.json)
-
-</details>
-<!-- END homepage-performance -->
+NVIDIA GPU 与昇腾 NPU 算子库，面向训练和推理中的高性能张量算子。提供统一 Python API、设备实现、独立数值参考与可复现的正确性和性能测量。
 
 <a id="quick-start"></a>
 
-## Quick start
-
-需要 Python 3.10+ 和与设备匹配的 PyTorch，在项目私有环境中安装：
+## 安装与最小示例
 
 ```bash
 git clone --recurse-submodules https://github.com/JPWang-CS/xpu-kernels.git
 cd xpu-kernels
-python -m pip install -e '.[gpu,dev]'  # GPU
-# NPU：先手动 source CANN，再安装 -e '.[dev]'
+python -m pip install -e '.[gpu,mhc-gpu,dev]'  # NVIDIA GPU，含 mHC
 ```
+
+昇腾 NPU 环境先手动 source 所选 CANN，再执行 `python -m pip install -e '.[dev]'`。依赖、工具链与构建说明见[安装指南](docs/getting-started.md)。
 
 ```python
 import torch
@@ -77,17 +29,44 @@ weight = torch.ones(4096, device=x.device, dtype=x.dtype)
 y = rms_norm(x, weight)
 ```
 
-GPU 默认使用 CUDA C++，可用 `implementation="triton"` 切换。NPU 张量使用同一接口。[完整安装、编译依赖与 NPU 示例](docs/getting-started.md)
+<a id="operators"></a>
 
-<a id="documentation"></a>
+## 算子
 
-## Documentation
+**RMSNorm** 沿最后一维归一化并应用权重，支持 CUDA C++、Triton 与 Ascend C。输入设备决定后端；GPU 默认使用 CUDA C++，也可指定 `implementation="triton"`。见 [RMSNorm 接口、数值约定与运行示例](docs/operators/rmsnorm.md)。
 
-- [安装与 Python API](docs/getting-started.md)
-- [正确性、benchmark 与 profiler](docs/benchmarking.md)
-- [安装包与设备验证](docs/validation.md)
-- [项目 AI Skill](skills/xpu-kernels/SKILL.md)：让 AI 读取 [AGENTS.md](AGENTS.md)，按项目规范检查环境、构建、验证并保存性能结果。
+**mHC Post Backward** 计算残差混合过程的四个梯度，GPU 使用 DeepSeek TileKernels 的 TileLang 实现，NPU 提供 Ascend C 实现。函数返回 `(grad_x, grad_h_res, grad_h_out, grad_h_post)`；输入约束、实现映射与运行方式见 [mHC Post Backward 文档](docs/operators/mhc-post-backward.md)。
+
+<a id="benchmarks"></a>
+
+## 性能
+
+<!-- BEGIN homepage-performance -->
+每组柱形对应同一个 shape，纵轴为 **μs/次，越低越快**。各面板独立使用从零开始的刻度。
+
+### RMSNorm
+
+![RMSNorm — NPU 950DT 与 GPU L20X 的绝对耗时](docs/assets/benchmark-rmsnorm.png)
+
+BF16，设备 Event / Eager 调用区间。各实现每次调用分配输出，预热 20 次，10 批 × 50 次，取批均值的中位数。
+
+[48 个 shape 的完整结果](docs/performance/README.md) · [公式与接口](docs/operators/rmsnorm.md)
+
+### mHC Post Backward
+
+![mHC Post Backward — NPU 原生、NPU 优化与 GPU TileLang 的内核耗时](docs/assets/benchmark-mhc.png)
+
+BF16，NPU 采用 msprof `Task Duration(us)`，GPU 采用 Nsight Compute 内核时间；各 shape 预热 20 次，取 5 次正式采样的中位数。NPU 原生为 CANN 包主线算子，GPU 使用 DeepSeek TileKernels 实现。
+
+[16 个 shape 的完整结果](docs/performance/mhc-post-backward.md) · [公式与接口](docs/operators/mhc-post-backward.md)
+
+[测试与采集方法](docs/benchmarking.md) · [图表数据](docs/assets/performance-chart-data.json)
+<!-- END homepage-performance -->
+
+## 性能复现
+
+运行设备正确性测试、复现 benchmark 与采集 profiler，见[Benchmark 与 Profiler 指南](docs/benchmarking.md)。安装包与设备验证记录见[验证报告](docs/validation.md)。
 
 ## License
 
-公共代码采用 [Apache-2.0](LICENSE)；mHC NPU 内核与成本模型保留 [CANN Open Software License 2.0](kernels/include/xpu_kernels/mhc_post_backward/LICENSE)。NPU JIT 运行时使用 [DeepJIT](https://github.com/deepseek-ai/DeepJIT)。[第三方说明](THIRD_PARTY_NOTICES.md)
+公共代码采用 [Apache-2.0](LICENSE)；DeepSeek TileKernels GPU 源码保留随附的 [MIT License](src/xpu_kernels/backends/_tilekernels/LICENSE)；mHC NPU 内核与成本模型保留 [CANN Open Software License 2.0](kernels/include/xpu_kernels/mhc_post_backward/LICENSE)。NPU JIT 运行时使用 [DeepJIT](https://github.com/deepseek-ai/DeepJIT)。[第三方说明](THIRD_PARTY_NOTICES.md)
