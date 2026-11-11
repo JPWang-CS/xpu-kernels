@@ -57,7 +57,7 @@ python -m xpu_kernels.cli test --device npu
 python -m xpu_kernels.cli bench --device npu --warmup 20 --batches 10 --iterations-per-batch 50
 ```
 
-`build`、JIT 编译产物、Python/Triton 扩展缓存均指向项目内 `build/`、`cache/` 和 `tmp/`。`test` 先执行多 shape、三种 dtype 的 correctness，再检查目标设备测试确实运行；没有可运行设备、零个测试或目标用例被跳过都会失败。`bench` 用 `torch.cuda.Event` 或 `torch.npu.Event` 记录当前设备流区间，按多个 batch 测量并复用预分配输出。默认测量 GPU CUDA C++、Triton、基础算子组合和 NPU AscendC，使用同一组 48 个 shape 与三种精度。GPU 表中的“单算子”指基础操作在 GPU 上组合执行，所有临时张量预分配。Golden 只检查正确性；框架 RMSNorm API 可用 `--native-reference` 额外测量。历史 best 只从同设备、硬件、shape、dtype、软件版本、Event 方法和 eager 模式的 xpu-kernels 测量中比较。可提交 JSONL 记录软件版本，不记录本机 CANN、编译器或缓存路径。
+`build`、JIT 编译产物、Python/Triton 扩展缓存均指向项目内 `build/`、`cache/` 和 `tmp/`。`test` 先执行多 shape、三种 dtype 的 correctness，再检查目标设备测试确实运行；没有可运行设备、零个测试或目标用例被跳过都会失败。`bench` 用 `torch.cuda.Event` 或 `torch.npu.Event` 记录当前设备流区间，按多个 batch 测量并复用预分配输出。默认测量 GPU CUDA C++、Triton、基础算子组合和 NPU AscendC，使用同一组 48 个 shape 与三种精度。GPU 表中的“单算子拼接”指基础操作在 GPU 上组合执行，所有临时张量预分配。Golden 只检查正确性；框架 RMSNorm API 可用 `--native-reference` 额外测量。历史 best 只从同设备、硬件、shape、dtype、软件版本、Event 方法和 eager 模式的 xpu-kernels 测量中比较。可提交 JSONL 记录软件版本，不记录本机 CANN、编译器或缓存路径。
 
 ## 独立 profiler
 

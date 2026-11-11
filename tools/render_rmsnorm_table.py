@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 COLUMNS = (("npu", "ascendc", "NPU 950DT"), ("cuda", "cuda", "GPU L20X"),
-           ("cuda", "triton", "GPU L20X（Triton）"), ("cuda", "torch", "GPU L20X（单算子）"))
+           ("cuda", "triton", "GPU L20X（Triton）"), ("cuda", "torch", "GPU L20X（单算子拼接）"))
 DTYPES = ("bfloat16", "float16", "float32")
 
 
@@ -38,7 +38,7 @@ def render() -> str:
 
 48 个 shape，FP32、FP16、BF16 三种精度，共 576 项正确性检查与性能测量，全部通过。表格单位为 **μs/次**，shape 为行数 × 归一化宽度。
 
-`NPU 950DT` 和 `GPU L20X` 是本库实现；GPU 另列 Triton 实现与“单算子”实现。“单算子”在 GPU 上依次执行平方、均值、加 epsilon、倒数平方根、归一化和权重乘法，低精度转换也在 GPU 上完成。各实现使用相同输入、权重和舍入顺序；输出和临时缓冲区均预分配。
+`NPU 950DT` 和 `GPU L20X` 是本库实现；GPU 另列 Triton 实现与“单算子拼接”实现。“单算子拼接”在 GPU 上依次执行平方、均值、加 epsilon、倒数平方根、归一化和权重乘法，低精度转换也在 GPU 上完成。各实现使用相同输入、权重和舍入顺序；输出和临时缓冲区均预分配。
 
 ## 测量方法
 

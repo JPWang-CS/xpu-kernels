@@ -2,7 +2,7 @@
 
 48 个 shape，FP32、FP16、BF16 三种精度，共 576 项正确性检查与性能测量，全部通过。表格单位为 **μs/次**，shape 为行数 × 归一化宽度。
 
-`NPU 950DT` 和 `GPU L20X` 是本库实现；GPU 另列 Triton 实现与“单算子”实现。“单算子”在 GPU 上依次执行平方、均值、加 epsilon、倒数平方根、归一化和权重乘法，低精度转换也在 GPU 上完成。各实现使用相同输入、权重和舍入顺序；输出和临时缓冲区均预分配。
+`NPU 950DT` 和 `GPU L20X` 是本库实现；GPU 另列 Triton 实现与“单算子拼接”实现。“单算子拼接”在 GPU 上依次执行平方、均值、加 epsilon、倒数平方根、归一化和权重乘法，低精度转换也在 GPU 上完成。各实现使用相同输入、权重和舍入顺序；输出和临时缓冲区均预分配。
 
 ## 测量方法
 
@@ -12,7 +12,7 @@ CUDA/NPU Event 记录 eager 模式下当前设备流的调用区间，包含等�
 
 ## BF16
 
-| Shape | NPU 950DT | GPU L20X | GPU L20X（Triton） | GPU L20X（单算子） |
+| Shape | NPU 950DT | GPU L20X | GPU L20X（Triton） | GPU L20X（单算子拼接） |
 |---|---:|---:|---:|---:|
 | 1 × 127 | 9.437 | 6.793 | 16.287 | 33.820 |
 | 1 × 128 | 9.336 | 6.714 | 16.348 | 33.833 |
@@ -66,7 +66,7 @@ CUDA/NPU Event 记录 eager 模式下当前设备流的调用区间，包含等�
 <details>
 <summary>FP16</summary>
 
-| Shape | NPU 950DT | GPU L20X | GPU L20X（Triton） | GPU L20X（单算子） |
+| Shape | NPU 950DT | GPU L20X | GPU L20X（Triton） | GPU L20X（单算子拼接） |
 |---|---:|---:|---:|---:|
 | 1 × 127 | 9.479 | 6.790 | 16.044 | 33.805 |
 | 1 × 128 | 9.311 | 6.877 | 16.001 | 33.592 |
@@ -122,7 +122,7 @@ CUDA/NPU Event 记录 eager 模式下当前设备流的调用区间，包含等�
 <details>
 <summary>FP32</summary>
 
-| Shape | NPU 950DT | GPU L20X | GPU L20X（Triton） | GPU L20X（单算子） |
+| Shape | NPU 950DT | GPU L20X | GPU L20X（Triton） | GPU L20X（单算子拼接） |
 |---|---:|---:|---:|---:|
 | 1 × 127 | 9.504 | 6.750 | 16.346 | 25.725 |
 | 1 × 128 | 9.427 | 6.852 | 16.748 | 26.104 |
