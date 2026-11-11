@@ -33,39 +33,27 @@ y = rms_norm(x, weight)
 
 ## 算子
 
-**RMSNorm** 沿最后一维归一化并应用权重，支持 CUDA C++、Triton 与 Ascend C。输入设备决定后端；GPU 默认使用 CUDA C++，也可指定 `implementation="triton"`。见 [RMSNorm 接口、数值约定与运行示例](docs/operators/rmsnorm.md)。
+**RMSNorm** 沿最后一维归一化并应用权重，适用于 GPU 与昇腾 NPU 工作负载。
 
-**mHC Post Backward** 计算残差混合过程的四个梯度，GPU 使用 DeepSeek TileKernels 的 TileLang 实现，NPU 提供 Ascend C 实现。函数返回 `(grad_x, grad_h_res, grad_h_out, grad_h_post)`；输入约束、实现映射与运行方式见 [mHC Post Backward 文档](docs/operators/mhc-post-backward.md)。
+**mHC Post Backward** 计算残差混合过程的四个梯度，提供 GPU 与昇腾 NPU 实现。
 
 <a id="benchmarks"></a>
 
 ## 性能
 
 <!-- BEGIN homepage-performance -->
-每组柱形对应同一个 shape，纵轴为 **μs/次，越低越快**。各面板独立使用从零开始的刻度。
-
 ### RMSNorm
 
-![RMSNorm — NPU 950DT 与 GPU L20X 的绝对耗时](docs/assets/benchmark-rmsnorm.png)
+![RMSNorm — NPU 与 GPU](docs/assets/benchmark-rmsnorm.png)
 
-BF16，设备 Event / Eager 调用区间。各实现每次调用分配输出，预热 20 次，10 批 × 50 次，取批均值的中位数。
-
-[48 个 shape 的完整结果](docs/performance/README.md) · [公式与接口](docs/operators/rmsnorm.md)
+[RMSNorm 完整文档](docs/operators/rmsnorm.md)
 
 ### mHC Post Backward
 
-![mHC Post Backward — NPU 原生、NPU 优化与 GPU TileLang 的内核耗时](docs/assets/benchmark-mhc.png)
+![mHC Post Backward — NPU 与 GPU](docs/assets/benchmark-mhc.png)
 
-BF16，NPU 采用 msprof `Task Duration(us)`，GPU 采用 Nsight Compute 内核时间；各 shape 预热 20 次，取 5 次正式采样的中位数。NPU 原生为 CANN 包主线算子，GPU 使用 DeepSeek TileKernels 实现。
-
-[16 个 shape 的完整结果](docs/performance/mhc-post-backward.md) · [公式与接口](docs/operators/mhc-post-backward.md)
-
-[测试与采集方法](docs/benchmarking.md) · [图表数据](docs/assets/performance-chart-data.json)
+[mHC Post Backward 完整文档](docs/operators/mhc-post-backward.md)
 <!-- END homepage-performance -->
-
-## 性能复现
-
-运行设备正确性测试、复现 benchmark 与采集 profiler，见[Benchmark 与 Profiler 指南](docs/benchmarking.md)。安装包与设备验证记录见[验证报告](docs/validation.md)。
 
 ## License
 
