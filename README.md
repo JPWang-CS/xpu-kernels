@@ -41,6 +41,8 @@ y = rms_norm(x, weight)
 
 ## 性能
 
+优化实现后续可能合入 CANN 上游。NPU 性能对比以测试时 CANN 包内的主线算子为基线。
+
 <!-- BEGIN homepage-performance -->
 ### mHC Post Backward
 
