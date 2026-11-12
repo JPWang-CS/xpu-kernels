@@ -33,7 +33,7 @@ y = rms_norm(x, weight)
 
 ## 算子
 
-**RMSNorm** 沿最后一维归一化并应用权重，适用于 GPU 与昇腾 NPU 工作负载。
+**RMSNorm** 沿最后一维归一化并应用权重，适用于 GPU 与昇腾 NPU 工作负载。见 [RMSNorm 完整文档](docs/operators/rmsnorm.md)。
 
 **mHC Post Backward** 计算残差混合过程的四个梯度，提供 GPU 与昇腾 NPU 实现。
 
@@ -42,12 +42,6 @@ y = rms_norm(x, weight)
 ## 性能
 
 <!-- BEGIN homepage-performance -->
-### RMSNorm
-
-![RMSNorm — NPU 与 GPU](docs/assets/benchmark-rmsnorm.png)
-
-[RMSNorm 完整文档](docs/operators/rmsnorm.md)
-
 ### mHC Post Backward
 
 ![mHC Post Backward — NPU 与 GPU](docs/assets/benchmark-mhc.png)

@@ -67,14 +67,7 @@ def rms_records():
 
 def homepage():
     mhc_records()
-    rms_records()
-    return """### RMSNorm
-
-![RMSNorm — NPU 与 GPU](docs/assets/benchmark-rmsnorm.png)
-
-[RMSNorm 完整文档](docs/operators/rmsnorm.md)
-
-### mHC Post Backward
+    return """### mHC Post Backward
 
 ![mHC Post Backward — NPU 与 GPU](docs/assets/benchmark-mhc.png)
 
