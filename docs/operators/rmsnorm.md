@@ -27,7 +27,7 @@ rms_norm(x, weight, eps=1e-5, out=None, *, implementation=None)
 
 $$
  r = \left(\frac{1}{D}\sum_{i=0}^{D-1}x_i^2 + \varepsilon\right)^{-1/2}, \qquad
- y_i = \operatorname{cast}_{\mathrm{dtype}(x)}(x_i r)\,w_i.
+ y_i = \mathrm{cast}_{\mathrm{dtype}(x)}(x_i r) \cdot w_i.
 $$
 
 独立参考为 `xpu_kernels.golden.rms_norm_golden`。NPU 的 CANN 原生算子可能采用不同的中间舍入顺序；做原生比较时按对应公式分别检查数值结果。
