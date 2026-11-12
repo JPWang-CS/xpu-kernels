@@ -43,6 +43,9 @@ y = rms_norm(x, weight)
 
 优化实现后续可能合入 CANN 上游。NPU 性能对比以测试时 CANN 包内的主线算子为基线。
 
+- **性能**：在相同 shape 和 dtype 下，预热后重复测量并报告耗时中位数；内核耗时与 Event 计时分别记录。
+- **精度**：与独立参考实现核对输出，按算子、输出和 dtype 设置 `atol` / `rtol`，正确性通过后再测性能。
+
 <!-- BEGIN homepage-performance -->
 ### mHC Post Backward
 
