@@ -35,9 +35,24 @@ y = rms_norm(x, weight)
 
 **RMSNorm** 沿最后一维归一化并应用权重，计算顺序与 CANN 主线一致。NPU 按输入选择主线原生或优化实现，GPU 提供 CUDA 与 Triton 实现。见 [RMSNorm 完整文档](docs/operators/rms_norm/README.md)。
 
-**mHC Post Backward** 计算残差混合过程的四个梯度，提供 GPU 与昇腾 NPU 实现。
+**mHC Post Backward** 计算残差混合过程的四个梯度，提供 GPU 与昇腾 NPU 实现。见 [mHC Post Backward 完整文档](docs/operators/mhc_post_backward/README.md)。
 
-贡献与新增算子遵循统一的[目录和接入规范](docs/repository-layout.md)，覆盖 API、设备源码、golden、测试及文档。
+## 仓库结构
+
+```text
+src/xpu_kernels/                 Python API、设备选择与独立数值参考
+csrc/                           CUDA / Ascend C 的主机侧接口
+kernels/include/xpu_kernels/    Ascend C 设备代码，按算子分目录
+tests/                          正确性与接口测试
+tools/                          性能采集、结果整理与统一绘图
+docs/operators/
+  <operator>/
+    README.md                   功能、公式、接口、范围和运行方法
+    optimization.md             优化设计、关键代码、数据流和实测结果
+    figures/                    算子配图
+```
+
+构建、测试和新增算子的方法见[开发说明](docs/repository-layout.md)。
 
 <a id="benchmarks"></a>
 

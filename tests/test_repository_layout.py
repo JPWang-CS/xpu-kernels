@@ -51,6 +51,18 @@ class RepositoryLayoutTests(unittest.TestCase):
         with patch.object(Path, "is_file", missing):
             self.assertIn("missing docs/operators/rms_norm/optimization.md", layout.check())
 
+    def test_public_document_cannot_delegate_usage_to_a_skill_link(self):
+        original = Path.read_text
+
+        def changed(path, *args, **kwargs):
+            text = original(path, *args, **kwargs)
+            if path == ROOT / "README.md":
+                text += "\n[Usage](skills/xpu-kernels/SKILL.md)\n"
+            return text
+
+        with patch.object(Path, "read_text", changed):
+            self.assertTrue(any("public doc links to internal instructions: README.md" in e for e in layout.check()))
+
 
 if __name__ == "__main__":
     unittest.main()

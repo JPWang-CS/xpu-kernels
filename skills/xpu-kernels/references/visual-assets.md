@@ -14,4 +14,4 @@ Performance charts use the shared Python/Matplotlib renderer `tools/render_homep
 
 `benchmark-mhc.png` uses four panels from the same renderer and preserves its exact source data. It shows GPU TileLang NCU kernel duration alongside NPU CANN native and optimized msprof `Task Duration(us)`. It compares the same four selected shapes, dtype and input distribution on each device; each device generates its own inputs. Event call intervals and kernel duration remain distinct metrics.
 
-[Rendering and validation](../benchmarking.md#5-记录与图表) · [Homepage structure and chart design](../homepage-design.md)
+[Rendering and validation](../../../docs/benchmarking.md#5-记录与图表) · [Homepage structure and chart design](homepage-style.md)

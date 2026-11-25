@@ -65,6 +65,14 @@ def check(root: Path = ROOT) -> list[str]:
             continue
         if not any(path.stem == f"{op}_{backend}" for op in operators for backend in ("cuda", "triton", "ascend")):
             errors.append(f"backend must be named <operator>_<backend>.py: {path.name}")
+    public_docs = [root / "README.md", root / "THIRD_PARTY_NOTICES.md",
+                   root / "results/benchmarks/README.md", *(root / "docs").rglob("*.md")]
+    for path in public_docs:
+        if not path.is_file():
+            continue
+        for target in re.findall(r"\]\(([^)]+)\)", path.read_text(encoding="utf-8")):
+            if re.search(r"(?:^|[/\\])(?:skills?|\.agents|\.claude)(?:[/\\]|$)|(?:^|[/\\])(?:SKILL|AGENTS|CLAUDE)\.md(?:#|$)", target, re.I):
+                errors.append(f"public doc links to internal instructions: {path.relative_to(root).as_posix()}: {target}")
     return errors
 
 

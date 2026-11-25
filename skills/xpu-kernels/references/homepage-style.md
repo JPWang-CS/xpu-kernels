@@ -26,4 +26,4 @@ References reviewed:
 - [FlashInfer](https://github.com/flashinfer-ai/flashinfer): direct installation and executable API examples, with detailed documentation linked separately.
 - [TileLang](https://github.com/tile-ai/tilelang): benchmark figures grouped by workload and hardware, backed by detailed benchmark sources.
 
-See [visual asset notes](assets/IMAGE_PROMPTS.md) for the masthead and chart production record, and [Benchmark and Profiler](benchmarking.md) for reproduction commands.
+See [visual asset notes](visual-assets.md) for the masthead and chart production record, and [Benchmark and Profiler](../../../docs/benchmarking.md) for reproduction commands.

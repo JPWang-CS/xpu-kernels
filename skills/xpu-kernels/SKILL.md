@@ -13,6 +13,8 @@ Read [the canonical layout](../../docs/repository-layout.md) before adding or mo
 
 ## Operator documentation
 
+README/public docs contain actual repository structure, user/developer commands and technical content. Do not expose skill/agent links or ask readers to consult SKILL.md/AGENTS.md for usage steps. Put those commands in the relevant public guide. Keep editorial conventions and artwork production history in internal references; see `references/homepage-style.md` and `references/visual-assets.md` when maintaining the homepage and visuals.
+
 Operator documentation uses exactly two Markdown files under `docs/operators/<operator>/`: `README.md` for function, equations, API, supported scope and run commands; `optimization.md` for original implementation, bottleneck, design changes, code, dataflow, precision and measured results. Keep diagrams under `figures/`. Reuse prior confirmed discussions and source/results, explain in plain written language, and introduce hardware abbreviations with their meaning. Put the relevant formula, code and picture together, followed by matched measurements and tradeoffs. Generated measurement blocks update only their marked section; preserve the surrounding design narrative. Run the layout and link checks after moves.
 
 Use actual interface/source parameter names in prose, formulas and figures, with a short explanation at first use. For example keep `h_res`, `h_out`, `h_post`, `grad_y` and `x`; do not introduce H/u/p/G/X aliases that the reader must translate back to code.

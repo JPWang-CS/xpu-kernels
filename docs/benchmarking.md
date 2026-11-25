@@ -102,4 +102,16 @@ NCU 对所选 CUDA C++、Triton 或 TileLang kernel 采集匹配 launch，使用
 
 benchmark JSONL 保存原始采样和环境信息，目录及字段说明见[记录格式](../results/benchmarks/README.md)。跨版本或不同测量方式的数据分开比较；历史最佳只与匹配的设备、实现、dtype、shape 和测量设置对照。PyTorch golden 用于正确性，不作为性能基线。
 
-首页图表从已验证的 JSONL 记录生成。更新图表前先核对数据来源与比较条件；渲染和检查命令见[项目 AI Skill](../skills/xpu-kernels/SKILL.md#homepage-performance-highlights)。完整延迟表见[性能索引](performance/README.md)。
+性能图从已验证的 JSONL 记录生成，每个算子单独出图，共用字体、配色、面板尺寸和两位小数格式。以下命令在仓库根目录执行：
+
+```bash
+python -m pip install -r tools/requirements-viz.txt
+python tools/render_homepage_charts.py
+python tools/render_homepage_charts.py --check
+python tools/render_homepage_performance.py
+python tools/render_homepage_performance.py --check
+```
+
+中文字体可通过 `python tools/render_homepage_charts.py --font <字体文件>` 指定。图片中的单位、计时方式、设备和实现与数据记录一致；`--check` 核对数据、公共样式与已保存图片，生成后检查图中文字和间距。
+
+算子实测表与优化设计放在各自的[算子文档](operators/README.md)中，历史 RMSNorm 多 shape 数据保留在[性能索引](performance/README.md)。

@@ -11,3 +11,5 @@ Operator documentation lives in `docs/operators/<operator>/`: `README.md` contai
 Keep interface parameter names in explanations, formulas and figures. Explain their meaning beside first use; do not replace `h_res`, `h_out`, `h_post`, `grad_y`, or other source parameters with an invented second set of letter aliases.
 
 Performance charts use the shared Python/Matplotlib renderer in `tools/render_homepage_charts.py`, its single `STYLE`, and committed benchmark data. Keep one figure per operator with the same fonts, colors, axes and number format. New operators add datasets and shapes to that renderer. Regenerate all figures after shared style changes; verify with `--check` and a visual review.
+
+README and public docs are for library users and contributors: show actual structure, APIs, commands, designs and measurements directly. Keep agent instructions, skill links, coordination rules and editorial/asset-production notes in this entry or `skills/xpu-kernels/` references. Public docs must not send readers to SKILL.md, AGENTS.md or other agent configuration to obtain usage instructions. The layout checker enforces this link boundary.
