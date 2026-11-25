@@ -1,19 +1,18 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "sources": [
     "results/benchmarks/mhc-post-backward-msprof.jsonl",
     "results/benchmarks/mhc-post-backward-gpu-ncu.jsonl",
-    "results/benchmarks/rmsnorm-npu-mainline.jsonl",
-    "results/benchmarks/rmsnorm-gpu-mainline.jsonl"
+    "results/benchmarks/rmsnorm-npu-cann.jsonl"
   ],
   "charts": [
     {
-      "id": "mhc",
-      "title": "mHC Post Backward",
-      "method": "BF16 · Kernel time · μs",
       "dtype": "bfloat16",
       "metric": "absolute_latency_us",
       "lower_is_better": true,
+      "id": "mhc",
+      "title": "mHC Post Backward",
+      "method": "BF16 · Kernel time · μs",
       "series": [
         {
           "implementation": "native",
@@ -83,12 +82,12 @@
       ]
     },
     {
-      "id": "rmsnorm",
-      "title": "RMSNorm",
-      "method": "BF16 · Eager call time · μs",
       "dtype": "bfloat16",
       "metric": "absolute_latency_us",
       "lower_is_better": true,
+      "id": "rmsnorm",
+      "title": "RMSNorm",
+      "method": "BF16 · Event call time · μs",
       "series": [
         {
           "implementation": "native",
@@ -96,77 +95,30 @@
           "color": "#94A3B8"
         },
         {
-          "implementation": "ascendc",
+          "implementation": "optimized",
           "label": "NPU 950DT（优化）",
           "color": "#0D9488"
-        },
-        {
-          "implementation": "cuda",
-          "label": "GPU L20X",
-          "color": "#2563EB"
-        },
-        {
-          "implementation": "triton",
-          "label": "GPU L20X（Triton）",
-          "color": "#7C3AED"
-        },
-        {
-          "implementation": "torch",
-          "label": "GPU L20X（单算子拼接）",
-          "color": "#D97706"
         }
       ],
       "cases": [
         {
           "shape": [
-            128,
-            4096
+            2048,
+            20480
           ],
           "latency_us": [
-            15.862579941749573,
-            12.783010005950928,
-            9.365440011024475,
-            18.76031994819641,
-            48.10431957244873
-          ]
-        },
-        {
-          "shape": [
-            129,
-            4097
-          ],
-          "latency_us": [
-            15.948870182037354,
-            13.246529698371887,
-            8.976000249385832,
-            18.483519554138184,
-            44.364800453186035
-          ]
-        },
-        {
-          "shape": [
-            1024,
-            4096
-          ],
-          "latency_us": [
-            15.910120010375978,
-            26.54088020324707,
-            9.908800125122072,
-            18.62048029899597,
-            79.57695960998535
+            83.16225051879883,
+            48.53065490722656
           ]
         },
         {
           "shape": [
             4096,
-            8192
+            20480
           ],
           "latency_us": [
-            35.430530309677124,
-            143.90450954437256,
-            58.61760139465331,
-            37.137280702590935,
-            491.5849494934082
+            203.16235542297363,
+            106.03671550750732
           ]
         }
       ]

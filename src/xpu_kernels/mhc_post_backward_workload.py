@@ -136,7 +136,7 @@ def run_cli(args):
             check_case(inputs((512,4,2560),"bfloat16",device),implementation)
             print("GPU mHC compiled and executed")
         else:
-            from .backends.npu import _load_extension
+            from .backends._ascend import _load_extension
             print(_load_extension().__file__)
         return 0
     if args.command == "example":
@@ -178,7 +178,7 @@ def run_cli(args):
         check_case(inputs(shape,args.dtype,device),implementation)
         output=args.output if args.output.is_absolute() else _root()/args.output
         output.mkdir(parents=True,exist_ok=True)
-        workload=[sys.executable,"-m","xpu_kernels.mhc_workload","--device",device,"--shape","x".join(map(str,shape)),
+        workload=[sys.executable,"-m","xpu_kernels.mhc_post_backward_workload","--device",device,"--shape","x".join(map(str,shape)),
                   "--dtype",args.dtype,"--implementation",implementation]
         binary=shutil.which(args.tool)
         if not binary:

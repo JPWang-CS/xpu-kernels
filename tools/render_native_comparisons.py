@@ -41,7 +41,7 @@ def table(index, shapes, dtype, optimized="optimized"):
 
 def mhc_records():
     records = load("mhc-post-backward-msprof.jsonl", "msprof Task Duration(us)", "mhc_post_backward")
-    from xpu_kernels.mhc_workload import SHAPES
+    from xpu_kernels.mhc_post_backward_workload import SHAPES
     if set(records) != {(s, "bfloat16", impl) for s in SHAPES for impl in ("native", "optimized")}:
         raise ValueError("incomplete mHC matrix")
     for shape, _, _ in records:
@@ -67,11 +67,19 @@ def rms_records():
 
 def homepage():
     mhc_records()
-    return """### mHC Post Backward
+    from render_rms_norm import measurements
+    measurements()
+    return """### RMSNorm
+
+![RMSNorm — NPU 原生与优化](docs/assets/benchmark-rmsnorm.png)
+
+[RMSNorm 完整文档](docs/operators/rms_norm.md)
+
+### mHC Post Backward
 
 ![mHC Post Backward — NPU 与 GPU](docs/assets/benchmark-mhc.png)
 
-[mHC Post Backward 完整文档](docs/operators/mhc-post-backward.md)"""
+[mHC Post Backward 完整文档](docs/operators/mhc_post_backward.md)"""
 
 
 def legacy_documents():
@@ -119,7 +127,7 @@ def documents():
     gpu=load("mhc-post-backward-gpu-ncu.jsonl","Nsight Compute gpu__time_duration.sum","mhc_post_backward")
     if set(gpu)!={(s,"bfloat16","tilelang") for s in shapes}:
         raise ValueError("incomplete GPU mHC matrix")
-    files[ROOT/"docs/performance/mhc-post-backward.md"]=r"""# mHC Post Backward 性能
+    files[ROOT/"docs/performance/mhc_post_backward.md"]=r"""# mHC Post Backward 性能
 
 BF16，单位 **μs/次**。各行采用相同 shape、输入精度和四个输出的检查规则，分别在 NPU 950DT 和 GPU L20X 上运行。NPU 原生调用 CANN 包主线 `aclnnMhcPostBackward`，优化调用本库内核；GPU 调用 DeepSeek TileKernels 的 TileLang 实现。
 
@@ -171,7 +179,7 @@ Event 测试在每次调用中分配四个输出，记录设备 stream 的调用
 - [NPU 内核统计](../../results/benchmarks/mhc-post-backward-msprof.jsonl) · [原生样本](data/mhc-mainline-native.csv) · [优化样本](data/mhc-mainline-optimized.csv)
 - [GPU 内核统计](../../results/benchmarks/mhc-post-backward-gpu-ncu.jsonl) · [NCU 样本](data/mhc-gpu-tilelang.csv)
 - Event 调用记录：[NPU](../../results/benchmarks/mhc-post-backward-npu-mainline.jsonl) · [GPU](../../results/benchmarks/mhc-post-backward-gpu-tilelang.jsonl)
-- [算子公式、适用范围与调用示例](../operators/mhc-post-backward.md)
+- [算子公式、适用范围与调用示例](../operators/mhc_post_backward.md)
 """
     rms,rshapes=rms_records()
     rgpu=load("rmsnorm-gpu-mainline.jsonl","torch.cuda.Event.elapsed_time","rms_norm")
@@ -184,7 +192,7 @@ Event 测试在每次调用中分配四个输出，记录设备 stream 的调用
             raise ValueError("RMSNorm comparison requires per-call allocation")
     files[ROOT/"docs/performance/README.md"]=r"""# RMSNorm 性能
 
-当前实现采用 CANN 主线的计算顺序，目标 shape 的原生与优化对照见 [CANN RMSNorm 性能](rmsnorm-cann.md)。以下保留旧数值约定下的多 shape 测量。
+当前实现采用 CANN 主线的计算顺序，目标 shape 的原生与优化对照见 [CANN RMSNorm 性能](rms_norm.md)。以下保留旧数值约定下的多 shape 测量。
 
 ## 历史多 shape 测量
 
@@ -217,7 +225,7 @@ python -m xpu_kernels.cli bench --device npu --native-reference \
 - [GPU 原始数据](../../results/benchmarks/rmsnorm-gpu-mainline.jsonl)：48 shape × 4 实现，BF16。
 - [NPU 原始数据](../../results/benchmarks/rmsnorm-npu-mainline.jsonl)：48 shape × 2 实现 × 3 精度。
 - [NPU 三种精度对照](rmsnorm-native.md) · [预分配输出测试](rmsnorm-preallocated.md)：保留 FP32 / FP16 / BF16 的历史测量及 profiler 数据。
-- [公式与接口](../operators/rmsnorm.md) · [采集方法](../benchmarking.md)
+- [公式与接口](../operators/rms_norm.md) · [采集方法](../benchmarking.md)
 """
     return files
 

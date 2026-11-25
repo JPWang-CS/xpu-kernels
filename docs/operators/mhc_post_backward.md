@@ -31,7 +31,7 @@ $$
 
 ## GPU：DeepSeek TileKernels
 
-GPU 实现保留 DeepSeek 官方 TileKernels 的 TileLang kernel 代码。项目内的 [post_cuda.py](../../src/xpu_kernels/backends/_tilekernels/post_cuda.py) 是上游 `post_cuda.py` 的原样 MIT 许可副本；对应许可证见同目录 [LICENSE](../../src/xpu_kernels/backends/_tilekernels/LICENSE)，上游来源为 [DeepSeek TileKernels](https://github.com/deepseek-ai/TileKernels/blob/main/tile_kernels/mhc/post_cuda.py)。[适配层](../../src/xpu_kernels/backends/mhc_cuda.py)完成输入、token 维布局和返回值映射，TileLang 实现负责生成 GPU kernel。
+GPU 实现保留 DeepSeek 官方 TileKernels 的 TileLang kernel 代码。项目内的 [post_cuda.py](../../src/xpu_kernels/backends/_tilekernels/post_cuda.py) 是上游 `post_cuda.py` 的原样 MIT 许可副本；对应许可证见同目录 [LICENSE](../../src/xpu_kernels/backends/_tilekernels/LICENSE)，上游来源为 [DeepSeek TileKernels](https://github.com/deepseek-ai/TileKernels/blob/main/tile_kernels/mhc/post_cuda.py)。[适配层](../../src/xpu_kernels/backends/mhc_post_backward_cuda.py)完成输入、token 维布局和返回值映射，TileLang 实现负责生成 GPU kernel。
 
 上游函数接收 `grad_y, h_res, x, h_post, h_out`，返回 `(da, db, dc, dd)`。适配层的映射如下：
 
@@ -105,7 +105,7 @@ python -m xpu_kernels.cli profile --device npu --operator mhc_post_backward \
   --output results/profiles/mhc-msprof
 ```
 
-CUDA Event 记录设备流区间，包含设备任务时间和可能的 CPU 提交间隙；NPU 的 kernel-only 数据采用 msprof `Task Duration(us)` 单独记录。GPU NCU 对 16 个 shape 各执行 20 次 warmup 和 5 次正式采样，共 400 次 launch；采集的 kernel 为 `mhc_post_bwd_cuda_kernel`，使用 kernel replay 和 `gpu__time_duration.sum`。NCU 中位数见 [NCU 记录](../../results/benchmarks/mhc-post-backward-gpu-ncu.jsonl)，逐次 launch 数据见 [TileKernels profiler CSV](../performance/data/mhc-gpu-tilelang.csv)。NPU 性能矩阵和采样细节见[mHC 性能记录](../performance/mhc-post-backward.md)。
+CUDA Event 记录设备流区间，包含设备任务时间和可能的 CPU 提交间隙；NPU 的 kernel-only 数据采用 msprof `Task Duration(us)` 单独记录。GPU NCU 对 16 个 shape 各执行 20 次 warmup 和 5 次正式采样，共 400 次 launch；采集的 kernel 为 `mhc_post_bwd_cuda_kernel`，使用 kernel replay 和 `gpu__time_duration.sum`。NCU 中位数见 [NCU 记录](../../results/benchmarks/mhc-post-backward-gpu-ncu.jsonl)，逐次 launch 数据见 [TileKernels profiler CSV](../performance/data/mhc-gpu-tilelang.csv)。NPU 性能矩阵和采样细节见[mHC 性能记录](../performance/mhc_post_backward.md)。
 
 ## 许可证
 

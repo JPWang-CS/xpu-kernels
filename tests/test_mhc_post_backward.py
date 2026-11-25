@@ -125,7 +125,7 @@ def _gpu_available():
 class MhcGpuKernelTests(unittest.TestCase):
     def test_full_outputs_tnd_bsnd_and_non_default_stream(self):
         import torch
-        from xpu_kernels.mhc_workload import inputs
+        from xpu_kernels.mhc_post_backward_workload import inputs
         from xpu_kernels import mhc_post_backward
         from xpu_kernels.mhc_post_backward import mhc_post_backward_golden
 
@@ -146,7 +146,7 @@ class MhcGpuKernelTests(unittest.TestCase):
     def test_device_scope_and_output_alias_checks(self):
         import torch
         from xpu_kernels import mhc_post_backward
-        from xpu_kernels.mhc_workload import inputs
+        from xpu_kernels.mhc_post_backward_workload import inputs
         values=inputs((512,4,2560),"float16","cuda")
         with self.assertRaisesRegex(ValueError,"BF16"):
             mhc_post_backward(*values)

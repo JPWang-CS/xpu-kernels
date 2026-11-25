@@ -11,7 +11,7 @@
 - 新版 GPU 源码的设备复验：当前连接受阻，待设备恢复后复验。
 - wheel 构建、源码与许可证资源检查、独立目录加载及设备运行：通过。wheel 中的两种优化方案均重新编译运行，RMSNorm 测试 6 项通过、2 项 GPU 专用测试跳过。
 
-两轮同卡 Event 测量与逐批样本见 [CANN RMSNorm 性能](performance/rmsnorm-cann.md)。官方 profiler 已采集原生与优化的两种 shape；部分指令流水导出有丢失告警，两份大 shape 的计数器采集耗时异常，保留为诊断材料，待重新采集后用于定量分析。
+两轮同卡 Event 测量与逐批样本见 [CANN RMSNorm 性能](performance/rms_norm.md)。官方 profiler 已采集原生与优化的两种 shape；部分指令流水导出有丢失告警，两份大 shape 的计数器采集耗时异常，保留为诊断材料，待重新采集后用于定量分析。
 
 | 验证项 | GPU L20X | NPU 950DT |
 |---|---|---|

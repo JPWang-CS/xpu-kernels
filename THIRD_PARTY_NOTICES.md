@@ -12,21 +12,21 @@ Copyright (c) 2026 Huawei Technologies Co., Ltd. These files retain the **CANN O
 
 The original Cube computation and fused Vector implementation are retained. Integration changes use canonical includes for DeepJIT, retain the optimized tiling record, and add `mhc_post_backward_ascend.hpp` as a JIT entry. The latter is distributed under the same CANN license. The host adapter calculates shape/device-dependent launch metadata and uses the current NPU stream. No CANN OPP package installation is required for this JIT path.
 
-The public Python API, independent FP64 equations, CLI and tests are project code. Supported shapes and validation results are documented in [the operator guide](docs/operators/mhc-post-backward.md).
+The public Python API, independent FP64 equations, CLI and tests are project code. Supported shapes and validation results are documented in [the operator guide](docs/operators/mhc_post_backward.md).
 
 ## Ascend C RMSNorm row-retain implementation
 
-`kernels/include/xpu_kernels/rms_norm_cann/` contains the exact-scope Ascend C
+`kernels/include/xpu_kernels/rms_norm/` contains the exact-scope Ascend C
 optimization implementation and its shared CANN reduction dependencies. The
 CANN native baseline remains `torch_npu.npu_rms_norm`; the public upstream
 operator reference is [CANN ops-nn/norm/rms_norm](https://gitcode.com/cann/ops-nn/tree/master/norm/rms_norm).
 The optimized implementation is selected by `XPU_RMS_ROW_SLOTS` through
-`kernels/include/xpu_kernels/rms_norm_cann_ascend.hpp` and exports the common
-DeepJIT symbol `xpu_rms_norm_cann`.
+`kernels/include/xpu_kernels/rms_norm/kernel.hpp` and exports the common
+DeepJIT symbol `rms_norm`.
 
 The copied Ascend C files retain the **CANN Open Software License Agreement
 Version 2.0**. The complete license text is included at
-[kernels/include/xpu_kernels/rms_norm_cann/LICENSE](kernels/include/xpu_kernels/rms_norm_cann/LICENSE).
+[kernels/include/xpu_kernels/rms_norm/LICENSE](kernels/include/xpu_kernels/rms_norm/LICENSE).
 No CANN SDK or OPP files are vendored; official Ascend C system headers remain
 external build dependencies.
 

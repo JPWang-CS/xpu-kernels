@@ -5,8 +5,8 @@
 
 #include <type_traits>
 #include <kernel_operator.h>
-#include <xpu_kernels/mhc_post_backward/ai_infra_mhc_post_backward_tiling_data_arch35.h>
-#include <xpu_kernels/mhc_post_backward/ai_infra_mhc_post_backward_cube.h>
+#include <xpu_kernels/mhc_post_backward/tiling.hpp>
+#include <xpu_kernels/mhc_post_backward/cube.hpp>
 
 namespace AiInfraMhcPostBackward {
 using namespace AscendC;

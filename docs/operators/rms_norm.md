@@ -33,7 +33,7 @@ $$
 
 CANN 主线的顺序是 `x * rstd` 后乘 `weight`，最后再将结果转换到输入 dtype。归一化、权重乘法和输出 cast 的中间精度由对应设备实现负责。
 
-`xpu_kernels.golden.rms_norm_golden` 是这个合同的独立参考实现。GPU、NPU CANN native 和 NPU 目标范围优化都使用对应设备实现；缺少设备实现、CANN、编译器或运行时依赖时直接报错。
+`xpu_kernels.rms_norm_golden.rms_norm_golden` 是这个合同的独立参考实现。GPU、NPU CANN native 和 NPU 目标范围优化都使用对应设备实现；缺少设备实现、CANN、编译器或运行时依赖时直接报错。
 
 ## 实现选择
 
@@ -65,7 +65,7 @@ CUDA 输入不接受 NPU 专用选项。
 - 展平后的行数 `M` 为 `2048` 或 `4096`；
 - `eps=1e-5`。
 
-其中 `M=2048` 使用两行保留槽的候选，`M=4096` 使用三行预取槽、两段 Y 写出的候选。两个候选通过同一个 DeepJIT 入口 `xpu_rms_norm_cann` 导出，编译单元用 `XPU_RMS_ROW_SLOTS=2/3` 选择实现。`rms_norm_cann` 是目标范围内的优化实现，不是 CANN native baseline。
+其中 `M=2048` 使用两行保留槽的候选，`M=4096` 使用三行预取槽、两段 Y 写出的候选。两个候选通过同一个 DeepJIT 入口 `rms_norm` 导出，编译单元用 `XPU_RMS_ROW_SLOTS=2/3` 选择实现。两种配置共用数值公式与归约顺序，按行数选择预取和写出方式。
 
 范围外的 NPU 输入，包括相邻的 `M`、其他 `D`、非 BF16、非连续布局、不同 `eps` 或其他硬件，`auto` 均调用 CANN 主线。
 

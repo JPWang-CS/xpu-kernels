@@ -181,7 +181,7 @@ def run_benchmark(
 ) -> list[dict]:
     import torch
     from . import rms_norm
-    from .golden import rms_norm_golden
+    from .rms_norm_golden import rms_norm_golden
     from .baselines import make_cuda_composed
 
     if batches < 1 or iterations_per_batch < 1 or warmup < 0:
@@ -255,7 +255,7 @@ def run_benchmark(
                                   _output_allocation_metadata(
                                       device, implementation, allocate_output_per_call, execution_path
                                   ),
-                                  "xpu_kernels.golden.rms_norm_golden"))
+                                  "xpu_kernels.rms_norm_golden.rms_norm_golden"))
                 if include_native_baseline and "native" not in selected:
                     native_call, native_info = _native_baseline(device, torch, x, weight, 1e-5)
                     if native_call is not None:

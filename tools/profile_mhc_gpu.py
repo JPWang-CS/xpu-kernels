@@ -15,7 +15,7 @@ import sys
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/"src"))
-from xpu_kernels.mhc_workload import SHAPES
+from xpu_kernels.mhc_post_backward_workload import SHAPES
 
 
 def extract(path,checks,output):
@@ -87,7 +87,7 @@ def main():
         command=[binary,"--kernel-name","regex:mhc_post_bwd_cuda_kernel","--replay-mode","kernel",
             "--cache-control","none","--clock-control","none","--metrics","gpu__time_duration.sum",
             "--csv","--log-file",str(args.from_csv.resolve()),sys.executable,"-B","-u","-m",
-            "xpu_kernels.mhc_workload","--device","cuda","--matrix","--implementation","tilelang",
+            "xpu_kernels.mhc_post_backward_workload","--device","cuda","--matrix","--implementation","tilelang",
             "--profile-warmup","20","--profile-repeats","5"]
         (args.output/"command.json").write_text(json.dumps(command),encoding="utf-8")
         with (args.output/"application.log").open("w",encoding="utf-8") as log:

@@ -40,5 +40,5 @@ at::Tensor rms_norm(at::Tensor input, at::Tensor weight, at::Tensor output, doub
 }  // namespace
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, module) {
-    module.def("rms_norm", &rms_norm, "CUDA RMSNorm (cast normalized values before gamma)");
+    module.def("rms_norm", &rms_norm, "CUDA RMSNorm (FP32 normalization and gamma, final output cast)");
 }

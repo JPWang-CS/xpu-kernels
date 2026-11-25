@@ -1,9 +1,9 @@
-#ifndef XPU_RMS_NORM_CANN_PREFETCH_ROW_RETAIN_TILING_H_
-#define XPU_RMS_NORM_CANN_PREFETCH_ROW_RETAIN_TILING_H_
+#ifndef XPU_RMS_NORM_TILING_H_
+#define XPU_RMS_NORM_TILING_H_
 
 #include <cstdint>
 
-namespace xpu_rms_cann_prefetch {
+namespace xpu_rms {
 
 // This layout is owned by the candidate launcher. It is intentionally kept
 // at the original 64-byte ABI and constructed locally by the JIT entry.
@@ -23,6 +23,6 @@ struct alignas(8) RowRetainTilingData {
 
 static_assert(sizeof(RowRetainTilingData) == 64, "RowRetainTilingData ABI must remain 64 bytes");
 
-}  // namespace xpu_rms_cann_prefetch
+}  // namespace xpu_rms
 
-#endif  // XPU_RMS_NORM_CANN_PREFETCH_ROW_RETAIN_TILING_H
+#endif  // XPU_RMS_NORM_TILING_H

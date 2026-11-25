@@ -17,7 +17,7 @@ class GoldenTests(unittest.TestCase):
     def test_final_cast_after_gamma_contract_and_output_dtype(self):
         import torch
 
-        from xpu_kernels.golden import rms_norm_golden
+        from xpu_kernels.rms_norm_golden import rms_norm_golden
 
         x = torch.tensor([[1.0, 2.0, 3.0], [-2.0, 1.0, 0.5]], dtype=torch.bfloat16)
         w = torch.tensor([0.3, -1.1, 2.0], dtype=torch.bfloat16)
@@ -75,7 +75,7 @@ class GpuKernelTests(unittest.TestCase):
         import torch
 
         from xpu_kernels import rms_norm
-        from xpu_kernels.golden import rms_norm_golden
+        from xpu_kernels.rms_norm_golden import rms_norm_golden
 
         for rows, width in ((1, 257), (4, 4096), (16, 8193)):
             for dtype in (torch.float32, torch.bfloat16, torch.float16):
@@ -94,7 +94,7 @@ class GpuKernelTests(unittest.TestCase):
         import torch
 
         from xpu_kernels import rms_norm
-        from xpu_kernels.golden import rms_norm_golden
+        from xpu_kernels.rms_norm_golden import rms_norm_golden
 
         module = torch.cuda if device == "cuda" else torch.npu
         stream = module.Stream()
@@ -163,7 +163,7 @@ class NpuKernelTests(unittest.TestCase):
         import torch_npu  # noqa: F401
 
         from xpu_kernels import rms_norm
-        from xpu_kernels.golden import rms_norm_golden
+        from xpu_kernels.rms_norm_golden import rms_norm_golden
 
         for rows, width in ((1, 257), (4, 4096), (16, 8193)):
             for dtype in (torch.float32, torch.bfloat16, torch.float16):
@@ -183,7 +183,7 @@ class NpuKernelTests(unittest.TestCase):
         import torch_npu  # noqa: F401
 
         from xpu_kernels import rms_norm
-        from xpu_kernels.golden import rms_norm_golden
+        from xpu_kernels.rms_norm_golden import rms_norm_golden
 
         module = torch.npu
         stream = module.Stream()

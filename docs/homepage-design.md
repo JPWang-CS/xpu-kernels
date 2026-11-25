@@ -8,13 +8,13 @@ The homepage uses a compact masthead and two combined performance figures. The a
 
 ### RMSNorm
 
-`docs/assets/benchmark-rmsnorm.png` compares NPU native and xpu-kernels with GPU CUDA, Triton and single-op composition. It reports per-call Event latency in microseconds. Every implementation allocates its output per call; the GPU composition also creates its intermediate tensors per call. The GPU native RMSNorm measurements remain in the full 192-record dataset for consistent allocation-policy comparisons.
+`docs/assets/benchmark-rmsnorm.png` compares CANN native and optimized RMSNorm on Ascend 950DT. It reports per-call Event latency for BF16 2048×20480 and 4096×20480; both implementations allocate Y/rstd per call. The current figure uses accepted current-contract measurements. Historical GPU comparisons remain in the detailed performance documents under their original numerical convention.
 
 ### mHC Post Backward
 
 `docs/assets/benchmark-mhc.png` compares NPU CANN native and xpu-kernels optimized kernel duration with GPU TileLang kernel duration. NPU values use msprof `Task Duration(us)`; GPU values use Nsight Compute `gpu__time_duration.sum`. The charts use the same four shapes, dtype and input distribution on each device, with independently generated device inputs.
 
-Both figures use absolute microseconds and linear axes starting at zero. Each is a 2×2 layout with one selected shape per panel; every panel compares the corresponding implementations across both devices. RMSNorm Event call intervals and mHC kernel duration appear in separate figures because they measure different scopes. Each figure's exact selections and values are recorded in `docs/assets/performance-chart-data.json`; the renderer's `--check` mode verifies the manifest against current benchmark records.
+Both figures use absolute microseconds and linear axes starting at zero. RMSNorm has two panels with a common 0..240 μs scale; mHC retains four independently scaled shape panels. RMSNorm Event call intervals and mHC kernel duration appear in separate figures because they measure different scopes. Exact selections and values are recorded in `docs/assets/performance-chart-data.json`; the preparation tool's `--check` mode verifies the manifest against current benchmark records. New figures are produced with ImageGen and visually checked against these values.
 
 ## Reading order and references
 

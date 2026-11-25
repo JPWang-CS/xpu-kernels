@@ -8,10 +8,10 @@ Prompt: A restrained academic/open-source kernel library masthead, near-white ba
 
 ## Performance charts
 
-`benchmark-rmsnorm.png` and `benchmark-mhc.png` are the combined, exact-data figures rendered by `tools/render_homepage_charts.py`. The renderer reads committed benchmark JSONL and stores selected shapes, labels, hardware, units and values in `performance-chart-data.json` for `--check` validation.
+`tools/render_homepage_charts.py` prepares the selected shapes, labels, hardware, units and values in `performance-chart-data.json` from committed benchmark JSONL. Its `--check` mode checks those values and saved assets. New artwork follows the project's ImageGen workflow and is visually checked against the manifest.
 
-Both figures show absolute latency in microseconds on linear axes starting at zero. Each figure has four independent shape panels; every panel compares the selected implementations on both devices for that shape. The RMSNorm figure uses per-call CUDA/NPU Event measurements with output allocation on every call. It shows NPU native and xpu-kernels implementations, plus GPU CUDA, Triton and single-op composition. The GPU RMSNorm dataset also includes PyTorch native measurements for the full 48-shape, four-implementation record set.
+`benchmark-rmsnorm.png` was generated with the built-in ImageGen tool at 1828×860. It uses two horizontal-bar panels with a shared 0..240 μs axis, gray native and teal optimized bars. Ascend 950DT BF16 Event call times are 83.16/48.53 μs for 2048×20480 and 203.16/106.04 μs for 4096×20480. Both implementations allocate Y/rstd per call. The labels, common zero baseline, bar proportions and units were visually checked. The production prompt is saved in [benchmark-rmsnorm.prompt.txt](benchmark-rmsnorm.prompt.txt). Historical GPU values use the prior numerical contract and are retained in detailed historical tables.
 
-The mHC figure shows GPU TileLang NCU kernel duration alongside NPU CANN native and optimized msprof `Task Duration(us)`. It compares the same four selected shapes, dtype and input distribution on each device; each device generates its own inputs. Event call intervals and kernel duration remain distinct metrics.
+The existing mHC figure retains its original four-panel artwork and exact source data. It shows GPU TileLang NCU kernel duration alongside NPU CANN native and optimized msprof `Task Duration(us)`. It compares the same four selected shapes, dtype and input distribution on each device; each device generates its own inputs. Event call intervals and kernel duration remain distinct metrics.
 
 [Rendering and validation](../benchmarking.md#5-记录与图表) · [Homepage structure and chart design](../homepage-design.md)

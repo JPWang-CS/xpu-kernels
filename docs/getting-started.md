@@ -1,6 +1,6 @@
 # 安装与开始使用
 
-本页说明如何安装 xpu-kernels、构建设备后端并运行一个算子示例。算子的输入约束和数值行为见 [RMSNorm](operators/rmsnorm.md) 与 [mHC Post Backward](operators/mhc-post-backward.md)；完整测试和性能复现见 [Benchmark 与 Profiler](benchmarking.md)。
+本页说明如何安装 xpu-kernels、构建设备后端并运行一个算子示例。算子的输入约束和数值行为见 [RMSNorm](operators/rms_norm.md) 与 [mHC Post Backward](operators/mhc_post_backward.md)；完整测试和性能复现见 [Benchmark 与 Profiler](benchmarking.md)。
 
 ## 环境要求
 
@@ -44,9 +44,9 @@ python -m xpu_kernels.cli example --device npu --operator rms_norm --shape 128x4
 python -m xpu_kernels.cli example --device npu --operator mhc_post_backward --shape 2x1024x4x6144
 ```
 
-RMSNorm 默认按输入选择实现：目标范围使用优化内核，其余调用 CANN 主线原生算子；`implementation="native"` 固定使用原生算子。优化范围与用法见 [RMSNorm](operators/rmsnorm.md)。
+RMSNorm 默认按输入选择实现：目标范围使用优化内核，其余调用 CANN 主线原生算子；`implementation="native"` 固定使用原生算子。优化范围与用法见 [RMSNorm](operators/rms_norm.md)。
 
-NPU 优化内核通过 DeepJIT 编译，构建需要 Bisheng、`ld.lld`、`adv_api`、支持 C++ `<format>` 的工具链、`Python.h` 和 elfutils 开发头文件；可用 `CXX` 指定编译器。首次调用编译并缓存内核，无需安装到公共 OPP。mHC 的输入条件和实现选择见 [mHC 算子说明](operators/mhc-post-backward.md)。
+NPU 优化内核通过 DeepJIT 编译，构建需要 Bisheng、`ld.lld`、`adv_api`、支持 C++ `<format>` 的工具链、`Python.h` 和 elfutils 开发头文件；可用 `CXX` 指定编译器。首次调用编译并缓存内核，无需安装到公共 OPP。mHC 的输入条件和实现选择见 [mHC 算子说明](operators/mhc_post_backward.md)。
 
 ## Python API
 
@@ -62,7 +62,7 @@ y = rms_norm(x, weight)
 y_triton = rms_norm(x, weight, implementation="triton")
 ```
 
-mHC 函数 `mhc_post_backward(grad_y, x, h_res, h_out, h_post, out=None, *, implementation="auto")` 返回 `(grad_x, grad_h_res, grad_h_out, grad_h_post)`。GPU 可用 `auto`、`optimized` 或 `tilelang` 选择同一 TileKernels 路径；NPU 使用 `auto`、`native` 或 `optimized` 选择对应路径。完整张量形状、dtype 和设备支持范围见 [算子文档](operators/mhc-post-backward.md)。
+mHC 函数 `mhc_post_backward(grad_y, x, h_res, h_out, h_post, out=None, *, implementation="auto")` 返回 `(grad_x, grad_h_res, grad_h_out, grad_h_post)`。GPU 可用 `auto`、`optimized` 或 `tilelang` 选择同一 TileKernels 路径；NPU 使用 `auto`、`native` 或 `optimized` 选择对应路径。完整张量形状、dtype 和设备支持范围见 [算子文档](operators/mhc_post_backward.md)。
 
 ## 构建缓存与 wheel
 

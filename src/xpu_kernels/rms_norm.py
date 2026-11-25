@@ -9,7 +9,7 @@ def rms_norm(x, weight, eps: float = 1e-5, out=None, *, implementation=None):
     CUDA defaults to the native CUDA extension; ``implementation="triton"``
     selects Triton. NPU uses the selected optimization inside its exact scope
     and CANN mainline otherwise. ``implementation="native"`` selects CANN.
-    There is no implicit reference fallback. Use ``golden.rms_norm_golden``
+    There is no implicit reference fallback. Use ``rms_norm_golden.rms_norm_golden``
     explicitly when a reference result is wanted.
     """
     npu_input = getattr(getattr(x, "device", None), "type", None) == "npu"
@@ -21,10 +21,10 @@ def rms_norm(x, weight, eps: float = 1e-5, out=None, *, implementation=None):
         if x.numel() == 0:
             return result if result is not None else torch.empty(tuple(x.shape), dtype=x.dtype, device=x.device)
         if implementation in (None, "cuda"):
-            from .backends.cuda import rms_norm_cuda
+            from .backends.rms_norm_cuda import rms_norm_cuda
 
             return rms_norm_cuda(x, weight, float(eps), result)
-        from .backends.gpu import rms_norm_gpu
+        from .backends.rms_norm_triton import rms_norm_gpu
 
         return rms_norm_gpu(x, weight, float(eps), result)
     if x.device.type == "npu":
@@ -32,7 +32,7 @@ def rms_norm(x, weight, eps: float = 1e-5, out=None, *, implementation=None):
             raise ValueError("NPU implementation must be auto, native, or optimized ('ascendc' aliases auto)")
         if x.numel() == 0:
             return result if result is not None else torch.empty(tuple(x.shape), dtype=x.dtype, device=x.device)
-        from .backends.npu import rms_norm_npu
+        from .backends.rms_norm_ascend import rms_norm_npu
 
         return rms_norm_npu(x, weight, float(eps), result, implementation=implementation or "auto")
     raise RuntimeError(

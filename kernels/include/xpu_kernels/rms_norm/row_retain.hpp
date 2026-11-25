@@ -1,15 +1,16 @@
-#ifndef XPU_RMS_NORM_CANN_YFULL_ROW_RETAIN_KERNEL_H_
-#define XPU_RMS_NORM_CANN_YFULL_ROW_RETAIN_KERNEL_H_
+#ifndef XPU_RMS_NORM_YFULL_ROW_RETAIN_KERNEL_H_
+#define XPU_RMS_NORM_YFULL_ROW_RETAIN_KERNEL_H_
 
 #include <kernel_operator.h>
 #include <kernel_tiling/kernel_tiling.h>
-#include <xpu_kernels/rms_norm_cann/common/rms_norm/arch35/rms_norm_regbase_common.h>
-#include <xpu_kernels/rms_norm_cann/common/rms_norm/reduce_common.h>
-#include <xpu_kernels/rms_norm_cann/yfull/row_retain_tiling.h>
+#include <xpu_kernels/rms_norm/regbase.hpp>
+#include <xpu_kernels/rms_norm/reduce_common.hpp>
+#include <xpu_kernels/rms_norm/tiling.hpp>
 
-namespace xpu_rms_cann_yfull {
+namespace xpu_rms_yfull {
 using namespace AscendC;
 using namespace RmsNorm;
+using xpu_rms::RowRetainTilingData;
 
 // Fixed candidate contract: D=20480, BF16 X/gamma/Y, FP32 rstd.
 //
@@ -22,9 +23,9 @@ using namespace RmsNorm;
 // available.  The X queue is not released until the Y segment has
 // completed their MTE3 copy; the queue then controls slot reuse.
 template <typename DX, typename DG, bool IS_GEMMA>
-class KernelRmsNormCannYfull {
+class KernelRmsNormYfull {
 public:
-    __aicore__ inline KernelRmsNormCannYfull() {}
+    __aicore__ inline KernelRmsNormYfull() {}
 
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR gamma, GM_ADDR y, GM_ADDR rstd,
                                 const RowRetainTilingData* tiling)
@@ -244,6 +245,6 @@ private:
     float avgFactor{0.0f};
 };
 
-}  // namespace xpu_rms_cann_yfull
+}  // namespace xpu_rms_yfull
 
-#endif  // XPU_RMS_NORM_CANN_YFULL_ROW_RETAIN_KERNEL_H_
+#endif  // XPU_RMS_NORM_YFULL_ROW_RETAIN_KERNEL_H_

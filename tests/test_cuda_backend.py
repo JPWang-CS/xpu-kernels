@@ -23,9 +23,9 @@ class ImplementationSelectionTests(unittest.TestCase):
         triton = Mock(return_value=output)
         ascendc = Mock(return_value=output)
         modules = {
-            "xpu_kernels.backends.cuda": SimpleNamespace(rms_norm_cuda=cuda),
-            "xpu_kernels.backends.gpu": SimpleNamespace(rms_norm_gpu=triton),
-            "xpu_kernels.backends.npu": SimpleNamespace(rms_norm_npu=ascendc),
+            "xpu_kernels.backends.rms_norm_cuda": SimpleNamespace(rms_norm_cuda=cuda),
+            "xpu_kernels.backends.rms_norm_triton": SimpleNamespace(rms_norm_gpu=triton),
+            "xpu_kernels.backends.rms_norm_ascend": SimpleNamespace(rms_norm_npu=ascendc),
         }
         with patch.object(dispatch_module, "validate_rms_norm", return_value=SimpleNamespace()), patch.dict(sys.modules, modules):
             result = dispatch_module.rms_norm(x, weight, out=output, implementation=implementation)
@@ -72,7 +72,7 @@ class ImplementationSelectionTests(unittest.TestCase):
             dispatch_module.rms_norm(None, None, 1e-5, None, "cuda")
 
     def test_cuda_wheel_sources_resolve_without_importing_torch(self):
-        from xpu_kernels.backends import cuda
+        from xpu_kernels.backends import rms_norm_cuda as cuda
 
         with tempfile.TemporaryDirectory() as temp:
             package = Path(temp) / "xpu_kernels"
@@ -81,7 +81,7 @@ class ImplementationSelectionTests(unittest.TestCase):
             cuda_sources.mkdir(parents=True)
             (cuda_sources / "rms_norm.cu").touch()
             (cuda_sources / "rms_norm.cpp").touch()
-            module_path = package / "backends" / "cuda.py"
+            module_path = package / "backends" / "rms_norm_cuda.py"
             with patch.object(cuda, "__file__", str(module_path)):
                 self.assertEqual(cuda._project_root(), native)
         self.assertTrue(hasattr(cuda._load_extension, "cache_info"))
@@ -108,7 +108,7 @@ class CudaBackendTests(unittest.TestCase):
 
         from xpu_kernels import rms_norm
         from xpu_kernels.bench import _tolerances
-        from xpu_kernels.golden import rms_norm_golden
+        from xpu_kernels.rms_norm_golden import rms_norm_golden
 
         cases = ((1, 1), (3, 127), (17, 257), (3, 4095), (17, 4097), (3, 8193), (17, 16384))
         for dtype in (torch.float32, torch.float16, torch.bfloat16):
@@ -131,7 +131,7 @@ class CudaBackendTests(unittest.TestCase):
 
         from xpu_kernels import rms_norm
         from xpu_kernels.bench import _tolerances
-        from xpu_kernels.golden import rms_norm_golden
+        from xpu_kernels.rms_norm_golden import rms_norm_golden
 
         for dtype in (torch.float16, torch.bfloat16):
             with self.subTest(dtype=dtype):
@@ -151,7 +151,7 @@ class CudaBackendTests(unittest.TestCase):
         import torch
 
         from xpu_kernels import rms_norm
-        from xpu_kernels.golden import rms_norm_golden
+        from xpu_kernels.rms_norm_golden import rms_norm_golden
 
         for shape in ((127,), (2, 3, 257), (0, 3, 257)):
             with self.subTest(shape=shape):
@@ -166,7 +166,7 @@ class CudaBackendTests(unittest.TestCase):
         import torch
 
         from xpu_kernels import rms_norm
-        from xpu_kernels.golden import rms_norm_golden
+        from xpu_kernels.rms_norm_golden import rms_norm_golden
 
         # Warm JIT before checking ordering, so host compilation cannot mask a wrong stream.
         x = torch.zeros((3, 4097), device="cuda", dtype=torch.float32)
@@ -190,7 +190,7 @@ class CudaBackendTests(unittest.TestCase):
         if torch.cuda.device_count() < 2:
             self.skipTest("device-guard test requires two visible CUDA devices")
         from xpu_kernels import rms_norm
-        from xpu_kernels.golden import rms_norm_golden
+        from xpu_kernels.rms_norm_golden import rms_norm_golden
 
         original = torch.cuda.current_device()
         tensor_device = (original + 1) % torch.cuda.device_count()
@@ -223,7 +223,7 @@ class CudaBackendTests(unittest.TestCase):
 
         from xpu_kernels import rms_norm
         from xpu_kernels.bench import _tolerances
-        from xpu_kernels.golden import rms_norm_golden
+        from xpu_kernels.rms_norm_golden import rms_norm_golden
 
         for dtype in (torch.float32, torch.float16, torch.bfloat16):
             x = torch.randn(3, 4097, device="cuda", dtype=dtype)

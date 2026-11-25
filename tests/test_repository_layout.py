@@ -1,0 +1,45 @@
+"""Keep operator additions on the published layout and exercise rejection paths."""
+import importlib.util
+from pathlib import Path
+import unittest
+from unittest.mock import patch
+
+ROOT = Path(__file__).resolve().parents[1]
+spec = importlib.util.spec_from_file_location("layout_check", ROOT / "tools/check_repository_layout.py")
+layout = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(layout)
+
+
+class RepositoryLayoutTests(unittest.TestCase):
+    def test_current_operators_and_includes_follow_layout(self):
+        self.assertEqual(layout.check(), [])
+
+    def test_exporting_an_operator_without_its_files_is_rejected(self):
+        original = Path.read_text
+
+        def changed(path, *args, **kwargs):
+            text = original(path, *args, **kwargs)
+            if path == ROOT / "src/xpu_kernels/__init__.py":
+                text += "\nfrom .missing_operator import missing_operator\n"
+            return text
+
+        with patch.object(Path, "read_text", changed):
+            errors = layout.check()
+        self.assertIn("missing src/xpu_kernels/missing_operator_golden.py", errors)
+        self.assertIn("no backend for missing_operator", errors)
+
+    def test_broken_local_include_is_rejected(self):
+        original = Path.read_text
+
+        def changed(path, *args, **kwargs):
+            text = original(path, *args, **kwargs)
+            if path == ROOT / "kernels/include/xpu_kernels/rms_norm/kernel.hpp":
+                text += "\n#include <xpu_kernels/rms_norm/missing.hpp>\n"
+            return text
+
+        with patch.object(Path, "read_text", changed):
+            self.assertTrue(any("missing.hpp" in e for e in layout.check()))
+
+
+if __name__ == "__main__":
+    unittest.main()

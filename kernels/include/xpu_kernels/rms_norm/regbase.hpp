@@ -16,9 +16,9 @@
 #define OPS_BUILT_IN_TBE_IMPL_ASCENDC_RMS_NORM_REGBASE_COMMON_H
 #include <kernel_operator.h>
 #include <kernel_tiling/kernel_tiling.h>
-#include <xpu_kernels/rms_norm_cann/common/kernel_utils.h>
-#include <xpu_kernels/rms_norm_cann/common/rms_norm/rms_norm_base.h>
-#include <xpu_kernels/rms_norm_cann/common/norm_common/reduce_common_regbase.h>
+#include <xpu_kernels/rms_norm/kernel_utils.hpp>
+#include <xpu_kernels/rms_norm/base.hpp>
+#include <xpu_kernels/rms_norm/reduce_regbase.hpp>
 
 namespace RmsNorm {
 using namespace AscendC;

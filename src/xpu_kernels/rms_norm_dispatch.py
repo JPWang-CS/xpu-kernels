@@ -42,10 +42,10 @@ def rms_norm_npu_with_rstd(x, weight, eps=1e-5, *, out=None, rstd_out=None, impl
     if implementation == "optimized" and not eligible:
         raise ValueError("optimized RMSNorm requires Ascend950, contiguous BF16, D=20480, M in {2048,4096}, eps=1e-5")
     if eligible:
-        from .backends.npu import rms_norm_cann_npu
+        from .backends.rms_norm_ascend import rms_norm_optimized_npu
         y = out if out is not None else torch.empty(tuple(x.shape), dtype=x.dtype, device=x.device)
         rstd = rstd_out if rstd_out is not None else torch.empty(rshape, dtype=torch.float32, device=x.device)
-        return rms_norm_cann_npu(x, weight, float(eps), y, rstd)
+        return rms_norm_optimized_npu(x, weight, float(eps), y, rstd)
     native = getattr(torch_npu, "npu_rms_norm", None)
     if native is None:
         native = getattr(getattr(torch.ops, "npu", None), "npu_rms_norm", None)

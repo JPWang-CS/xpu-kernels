@@ -62,7 +62,7 @@ class ProjectContractTests(unittest.TestCase):
             "iterations_per_batch": 10,
             "latency_ms_median": 0.25,
             "latency_ms_samples": [0.24, 0.25, 0.26],
-            "correctness_reference": "xpu_kernels.golden.rms_norm_golden (not a performance baseline)",
+            "correctness_reference": "xpu_kernels.rms_norm_golden.rms_norm_golden (not a performance baseline)",
             "native_baseline": {"status": "not_requested"},
             "baseline_best_ms": 0.3,
             "speedup_vs_baseline": 1.2,
@@ -90,7 +90,7 @@ class ProjectContractTests(unittest.TestCase):
             "iterations_per_batch": 10,
             "latency_ms_median": 0.25,
             "latency_ms_samples": [0.24],
-            "correctness_reference": "xpu_kernels.golden.rms_norm_golden (not a performance baseline)",
+            "correctness_reference": "xpu_kernels.rms_norm_golden.rms_norm_golden (not a performance baseline)",
             "native_baseline": {"status": "not_requested"},
             "baseline_best_ms": None,
             "speedup_vs_baseline": None,
@@ -268,7 +268,7 @@ class ProjectContractTests(unittest.TestCase):
     def test_msprof_uses_application_option_without_extra_python_token(self):
         command = _profile_command(
             "msprof", "msprof", Path("results/profiles"),
-            ["/usr/bin/python", "-m", "xpu_kernels.profile_workload", "--device", "npu"],
+            ["/usr/bin/python", "-m", "xpu_kernels.rms_norm_workload", "--device", "npu"],
             "--output --application",
         )
         self.assertEqual(command[:2], ["msprof", f"--output={Path('results/profiles')}"])
@@ -373,16 +373,16 @@ class ProjectContractTests(unittest.TestCase):
         from pathlib import Path
         from tempfile import TemporaryDirectory
 
-        from xpu_kernels.backends import npu
+        from xpu_kernels.backends import _ascend as npu
 
         with TemporaryDirectory() as temp:
             package = Path(temp) / "xpu_kernels"
             native = package / "_native"
             (native / "csrc" / "ascend").mkdir(parents=True)
-            (native / "csrc" / "ascend" / "rms_norm.cpp").touch()
+            (native / "csrc" / "ascend" / "bindings.cpp").touch()
             (native / "kernels" / "include" / "xpu_kernels").mkdir(parents=True)
-            (native / "kernels" / "include" / "xpu_kernels" / "rms_norm_ascend.hpp").touch()
-            installed_module = package / "backends" / "npu.py"
+            (native / "kernels" / "include" / "xpu_kernels" / "rms_norm.hpp").touch()
+            installed_module = package / "backends" / "_ascend.py"
             installed_module.parent.mkdir(parents=True)
             with patch.object(npu, "__file__", str(installed_module)):
                 self.assertEqual(npu._project_root(), native)

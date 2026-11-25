@@ -88,7 +88,7 @@ def _build(backend: str, force: bool, implementation: str | None = None) -> int:
                 raise RuntimeError("Triton is missing")
             print(json.dumps(report, indent=2, ensure_ascii=False))
             return 0
-        from .backends.cuda import _load_extension
+        from .backends.rms_norm_cuda import _load_extension
         if force:
             _load_extension.cache_clear()
         module = _load_extension()
@@ -98,7 +98,7 @@ def _build(backend: str, force: bool, implementation: str | None = None) -> int:
     if force:
         import shutil
 
-        from .backends.npu import _project_root
+        from .backends._ascend import _project_root
 
         native_root = _project_root()
         checkout = (native_root / "pyproject.toml").is_file()
@@ -109,7 +109,7 @@ def _build(backend: str, force: bool, implementation: str | None = None) -> int:
         build_dir = cache_root / "build" / "npu-extension"
         if build_dir.exists():
             shutil.rmtree(build_dir)
-    from .backends.npu import _load_extension
+    from .backends._ascend import _load_extension
 
     if force:
         _load_extension.cache_clear()
@@ -123,7 +123,7 @@ def _example(device: str, shape: tuple[int, int], implementation: str | None = N
     import torch
 
     from . import rms_norm
-    from .golden import rms_norm_golden
+    from .rms_norm_golden import rms_norm_golden
     from .bench import _tolerances
 
     dev = torch.device(device)
@@ -265,14 +265,14 @@ def _profile(args) -> int:
                 binary = str(candidate)
     if binary is None:
         raise RuntimeError(f"profiler executable {args.tool!r} was not found")
-    from .profile_workload import check_profile_case
+    from .rms_norm_workload import check_profile_case
 
     implementation = args.implementation or ("cuda" if args.device == "cuda" else "auto")
     check_profile_case(args.device, args.shape[0], args.dtype, implementation)
     output = args.output if args.output.is_absolute() else _root() / args.output
     output.mkdir(parents=True, exist_ok=True)
     workload = [
-        sys.executable, "-m", "xpu_kernels.profile_workload",
+        sys.executable, "-m", "xpu_kernels.rms_norm_workload",
         "--device", args.device,
         "--shape", f"{args.shape[0][0]}x{args.shape[0][1]}",
         "--dtype", args.dtype, "--implementation", implementation,
@@ -290,7 +290,7 @@ def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
         if getattr(args, "operator", None) == "mhc_post_backward":
-            from .mhc_workload import run_cli
+            from .mhc_post_backward_workload import run_cli
             return run_cli(args)
         if getattr(args, "implementation", None) == "tilelang":
             raise ValueError("tilelang implementation applies to mhc_post_backward")

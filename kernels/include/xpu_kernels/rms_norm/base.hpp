@@ -11,7 +11,7 @@
 #ifndef RMS_NORM_BASE_H_
 #define RMS_NORM_BASE_H_
 #include <kernel_operator.h>
-#include <xpu_kernels/rms_norm_cann/common/rms_norm/reduce_common.h>
+#include <xpu_kernels/rms_norm/reduce_common.hpp>
 
 namespace RmsNorm {
 using namespace AscendC;

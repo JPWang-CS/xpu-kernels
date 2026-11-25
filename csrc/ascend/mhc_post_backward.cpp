@@ -9,7 +9,7 @@
 #include <torch/extension.h>
 #include <deep_jit/backend/ascend/backend.hpp>
 #include <deep_jit/runtime/runtime.hpp>
-#include <xpu_kernels/mhc_post_backward/ai_infra_mhc_post_backward_tiling_cost_model.h>
+#include <xpu_kernels/mhc_post_backward/cost_model.hpp>
 
 namespace {
 using Runtime = deep_jit::Runtime<deep_jit::Ascend>;
@@ -19,7 +19,7 @@ Runtime& mhc_runtime() {
         TORCH_CHECK(value, "XPU_KERNELS_ROOT must identify native resources");
         const auto root = std::filesystem::absolute(value).lexically_normal();
         return deep_jit::create_lazy_jit<deep_jit::Ascend>(deep_jit::Config(
-            root, "XPU_KERNELS", "mhc-post-backward-v1", {root / "kernels" / "include"}, {"xpu_kernels/"}));
+            root, "XPU_KERNELS", "mhc-post-backward", {root / "kernels" / "include"}, {"xpu_kernels/"}));
     }();
     return *runtime.get();
 }
@@ -90,7 +90,7 @@ std::vector<torch::Tensor> mhc_post_backward(
         + "\n#define XPU_MHC_CORES " + std::to_string(cores)
         + "\n#define XPU_MHC_UB " + std::to_string(ub)
         + (selected_tile ? "\n#define XPU_MHC_TILE " + std::to_string(selected_tile) : "")
-        + "\n#include <xpu_kernels/mhc_post_backward_ascend.hpp>\n";
+        + "\n#include <xpu_kernels/mhc_post_backward/kernel.hpp>\n";
     const auto kernel = runtime.compile(name, source);
     runtime.launch(kernel, {.num_blocks = cores, .num_launch_timeout_secs = 30},
         grad_y.data_ptr(), x.data_ptr(), h_res.data_ptr(), h_out.data_ptr(), h_post.data_ptr(),

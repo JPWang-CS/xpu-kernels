@@ -1,6 +1,6 @@
 # RMSNorm 性能
 
-当前实现采用 CANN 主线的计算顺序，目标 shape 的原生与优化对照见 [CANN RMSNorm 性能](rmsnorm-cann.md)。以下保留旧数值约定下的多 shape 测量。
+当前实现采用 CANN 主线的计算顺序，目标 shape 的原生与优化对照见 [CANN RMSNorm 性能](rms_norm.md)。以下保留旧数值约定下的多 shape 测量。
 
 ## 历史多 shape 测量
 
@@ -82,4 +82,4 @@ python -m xpu_kernels.cli bench --device npu --native-reference \
 - [GPU 原始数据](../../results/benchmarks/rmsnorm-gpu-mainline.jsonl)：48 shape × 4 实现，BF16。
 - [NPU 原始数据](../../results/benchmarks/rmsnorm-npu-mainline.jsonl)：48 shape × 2 实现 × 3 精度。
 - [NPU 三种精度对照](rmsnorm-native.md) · [预分配输出测试](rmsnorm-preallocated.md)：保留 FP32 / FP16 / BF16 的历史测量及 profiler 数据。
-- [公式与接口](../operators/rmsnorm.md) · [采集方法](../benchmarking.md)
+- [公式与接口](../operators/rms_norm.md) · [采集方法](../benchmarking.md)

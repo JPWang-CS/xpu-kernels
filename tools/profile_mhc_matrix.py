@@ -14,7 +14,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from xpu_kernels.mhc_workload import SHAPES
+from xpu_kernels.mhc_post_backward_workload import SHAPES
 
 
 def extract(profile_root, checks_path, output):
@@ -103,7 +103,7 @@ def main():
         for impl in ("native", "optimized"):
             out = args.output / impl
             out.mkdir()
-            workload = [sys.executable, "-B", "-u", "-m", "xpu_kernels.mhc_workload",
+            workload = [sys.executable, "-B", "-u", "-m", "xpu_kernels.mhc_post_backward_workload",
                 "--matrix", "--implementation", impl, "--profile-warmup", "20", "--profile-repeats", "5"]
             command = _profile_command("msprof", binary, out.resolve(), workload, help_text)
             (out / "command.json").write_text(json.dumps(command), encoding="utf-8")

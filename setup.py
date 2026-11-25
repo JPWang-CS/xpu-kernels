@@ -15,7 +15,13 @@ class BuildPyWithNativeResources(build_py):
 
     def run(self):
         super().run()
-        target = Path(self.build_lib) / "xpu_kernels" / "_native"
+        build_root = Path(self.build_lib).resolve()
+        target = build_root / "xpu_kernels" / "_native"
+        if target.resolve() != target or not target.is_relative_to(build_root):
+            raise RuntimeError("native build resources must stay in the package build directory")
+        if target.exists():
+            # A reused build directory must not carry removed/renamed JIT sources.
+            shutil.rmtree(target)
         resources = {
             ROOT / "csrc" / "ascend": target / "csrc" / "ascend",
             ROOT / "csrc" / "cuda": target / "csrc" / "cuda",

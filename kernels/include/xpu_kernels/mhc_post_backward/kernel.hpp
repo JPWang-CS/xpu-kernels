@@ -1,9 +1,9 @@
 // Copyright (c) 2026 Huawei Technologies Co., Ltd.
 // Licensed under CANN Open Software License Agreement Version 2.0.
-// Project JIT entry for the retained V1 mixed Cube/Vector implementation.
+// Project JIT entry for the mixed Cube/Vector implementation.
 #pragma once
 #include <kernel_operator.h>
-#include <xpu_kernels/mhc_post_backward/ai_infra_mhc_post_backward_kernel_merge_batch.h>
+#include <xpu_kernels/mhc_post_backward/vector.hpp>
 using namespace AiInfraMhcPostBackward;
 
 extern "C" __global__ __aicore__ void XPU_MHC_KERNEL(

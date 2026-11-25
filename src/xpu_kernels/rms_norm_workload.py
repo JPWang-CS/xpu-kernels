@@ -18,7 +18,7 @@ def check_profile_case(device: str, shape: tuple[int, int], dtype_name: str, imp
 
     from . import rms_norm
     from .bench import _tolerances
-    from .golden import rms_norm_golden
+    from .rms_norm_golden import rms_norm_golden
 
     dtype = getattr(torch, dtype_name)
     rows, width = shape

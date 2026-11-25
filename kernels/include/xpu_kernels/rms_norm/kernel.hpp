@@ -13,17 +13,17 @@
 #endif
 
 #if XPU_RMS_ROW_SLOTS == 2
-#include <xpu_kernels/rms_norm_cann/yfull/rms_norm_row_retain.h>
-namespace xpu_rms_cann_selected {
-using TilingData = xpu_rms_cann_yfull::RowRetainTilingData;
-using Kernel = xpu_rms_cann_yfull::KernelRmsNormCannYfull<bfloat16_t, bfloat16_t, false>;
-}  // namespace xpu_rms_cann_selected
+#include <xpu_kernels/rms_norm/row_retain.hpp>
+namespace xpu_rms_selected {
+using TilingData = xpu_rms_yfull::RowRetainTilingData;
+using Kernel = xpu_rms_yfull::KernelRmsNormYfull<bfloat16_t, bfloat16_t, false>;
+}  // namespace xpu_rms_selected
 #elif XPU_RMS_ROW_SLOTS == 3
-#include <xpu_kernels/rms_norm_cann/prefetch/rms_norm_row_retain.h>
-namespace xpu_rms_cann_selected {
-using TilingData = xpu_rms_cann_prefetch::RowRetainTilingData;
-using Kernel = xpu_rms_cann_prefetch::KernelRmsNormCannPrefetch<bfloat16_t, bfloat16_t, false>;
-}  // namespace xpu_rms_cann_selected
+#include <xpu_kernels/rms_norm/row_prefetch.hpp>
+namespace xpu_rms_selected {
+using TilingData = xpu_rms_prefetch::RowRetainTilingData;
+using Kernel = xpu_rms_prefetch::KernelRmsNormPrefetch<bfloat16_t, bfloat16_t, false>;
+}  // namespace xpu_rms_selected
 #else
 #error "XPU_RMS_ROW_SLOTS must be 2 (Y-full) or 3 (prefetch)"
 #endif
@@ -31,9 +31,9 @@ using Kernel = xpu_rms_cann_prefetch::KernelRmsNormCannPrefetch<bfloat16_t, bflo
 // Fixed contract: D=20480, BF16 X/gamma/Y, FP32 rstd, epsilon=1e-5.
 // The host launches 64 AIV blocks. For the supported M values this gives
 // block_factor=ceil(M/64), so every block receives at most 64 rows.
-extern "C" __global__ __vector__ void xpu_rms_norm_cann(
+extern "C" __global__ __vector__ void rms_norm(
     GM_ADDR x, GM_ADDR gamma, GM_ADDR y, GM_ADDR rstd, uint32_t rows) {
-    xpu_rms_cann_selected::TilingData tiling{};
+    xpu_rms_selected::TilingData tiling{};
     tiling.num_row = rows;
     tiling.num_col = 20480;
     tiling.num_col_align = 20480;
@@ -46,7 +46,7 @@ extern "C" __global__ __vector__ void xpu_rms_norm_cann(
     tiling.avg_factor = 1.0F / 20480.0F;
     tiling.is_gemma = 0;
 
-    xpu_rms_cann_selected::Kernel op;
+    xpu_rms_selected::Kernel op;
     op.Init(x, gamma, y, rstd, &tiling);
     op.Process();
 }

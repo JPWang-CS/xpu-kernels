@@ -7,12 +7,12 @@ from pathlib import Path
 
 def _project_root() -> Path:
     checkout = Path(__file__).resolve().parents[3]
-    if (checkout / "csrc" / "ascend" / "rms_norm.cpp").is_file():
+    if (checkout / "csrc" / "ascend" / "bindings.cpp").is_file():
         return checkout
     packaged = Path(__file__).resolve().parents[1] / "_native"
-    if (packaged / "csrc" / "ascend" / "rms_norm.cpp").is_file():
+    if (packaged / "csrc" / "ascend" / "bindings.cpp").is_file():
         return packaged
-    raise RuntimeError("native RMSNorm sources are missing from both the source checkout and installed package")
+    raise RuntimeError("native Ascend sources are missing from both the source checkout and installed package")
 
 
 @lru_cache(maxsize=1)
@@ -25,7 +25,7 @@ def _load_extension():
         raise RuntimeError("NPU execution requires torch, torch_npu, and CANN") from exc
 
     root = _project_root()
-    source = root / "csrc" / "ascend" / "rms_norm.cpp"
+    source = root / "csrc" / "ascend" / "bindings.cpp"
     deep_jit = root / "third-party" / "deep-jit" / "include"
     if not source.is_file() or not (deep_jit / "deep_jit" / "backend" / "ascend" / "backend.hpp").is_file():
         raise RuntimeError("NPU sources or DeepJIT headers are missing; initialize the repository submodule")
@@ -65,8 +65,8 @@ def _load_extension():
     ldflags.extend(f"-Wl,-rpath,{path}" for path in libraries)
     return load(
         name="xpu_kernels_ascend",
-        sources=[str(source), str(root / "csrc" / "ascend" / "mhc_post_backward.cpp"),
-                 str(root / "csrc" / "ascend" / "rms_norm_cann.cpp")],
+        sources=[str(source), str(root / "csrc" / "ascend" / "rms_norm.cpp"),
+                 str(root / "csrc" / "ascend" / "mhc_post_backward.cpp")],
         extra_cflags=["-std=c++20", "-O3", "-fPIC", "-DDJ_DISABLE_GIL=1"],
         extra_include_paths=[str(path) for path in includes],
         extra_ldflags=ldflags,
@@ -74,17 +74,3 @@ def _load_extension():
         with_cuda=False,
         verbose=True,
     )
-
-
-def rms_norm_npu(x, weight, eps: float, out, *, implementation="auto"):
-    if x.device.type != "npu":
-        raise RuntimeError("NPU backend requires an NPU tensor")
-    from ..rms_norm_dispatch import rms_norm_npu_with_rstd
-    return rms_norm_npu_with_rstd(x, weight, eps, out=out, implementation=implementation)[0]
-
-
-def rms_norm_cann_npu(x, weight, eps: float, y, rstd):
-    """Launch the selected CANN-compatible kernel on the current NPU stream."""
-    module = _load_extension()
-    module.rms_norm_cann_optimized(x, weight, y, rstd, eps)
-    return y, rstd

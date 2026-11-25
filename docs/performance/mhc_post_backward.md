@@ -67,4 +67,4 @@ Event 测试在每次调用中分配四个输出，记录设备 stream 的调用
 - [NPU 内核统计](../../results/benchmarks/mhc-post-backward-msprof.jsonl) · [原生样本](data/mhc-mainline-native.csv) · [优化样本](data/mhc-mainline-optimized.csv)
 - [GPU 内核统计](../../results/benchmarks/mhc-post-backward-gpu-ncu.jsonl) · [NCU 样本](data/mhc-gpu-tilelang.csv)
 - Event 调用记录：[NPU](../../results/benchmarks/mhc-post-backward-npu-mainline.jsonl) · [GPU](../../results/benchmarks/mhc-post-backward-gpu-tilelang.jsonl)
-- [算子公式、适用范围与调用示例](../operators/mhc-post-backward.md)
+- [算子公式、适用范围与调用示例](../operators/mhc_post_backward.md)

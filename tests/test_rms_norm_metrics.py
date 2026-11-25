@@ -52,7 +52,7 @@ def _record(**overrides):
         "iterations_per_batch": 1,
         "latency_ms_median": 1.0,
         "latency_ms_samples": [1.0],
-        "correctness_reference": "xpu_kernels.golden.rms_norm_golden",
+        "correctness_reference": "xpu_kernels.rms_norm_golden.rms_norm_golden",
         "correctness": {"status": "PASS", "max_abs_error": 0.0, "rtol": 1e-2, "atol": 7.8125e-3},
         "native_baseline": {"status": "not_requested"},
         "baseline_best_ms": None,

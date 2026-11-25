@@ -28,7 +28,7 @@ python -m xpu_kernels.cli test --device cuda --operator mhc_post_backward
 python -m xpu_kernels.cli test --device npu --operator mhc_post_backward
 ```
 
-RMSNorm 测试覆盖对齐、尾部宽度及多种 dtype；mHC 测试覆盖 CPU FP64 golden、autograd 参考以及 CUDA/NPU 设备路径。GPU mHC 完整设备测试通过，检查 TND/BSND 全部四个输出、非默认 CUDA stream、`out` 写回复用，以及不支持 dtype、宽度和输出别名的输入边界。具体数值合同见[RMSNorm](operators/rmsnorm.md)和[mHC](operators/mhc-post-backward.md)。
+RMSNorm 测试覆盖对齐、尾部宽度及多种 dtype；mHC 测试覆盖 CPU FP64 golden、autograd 参考以及 CUDA/NPU 设备路径。GPU mHC 完整设备测试通过，检查 TND/BSND 全部四个输出、非默认 CUDA stream、`out` 写回复用，以及不支持 dtype、宽度和输出别名的输入边界。具体数值合同见[RMSNorm](operators/rms_norm.md)和[mHC](operators/mhc_post_backward.md)。
 
 也可运行单个 correctness example 快速检查安装：
 
@@ -72,7 +72,7 @@ python -m xpu_kernels.cli bench --device npu --operator mhc_post_backward \
   --warmup 20 --batches 10 --iterations-per-batch 50
 ```
 
-两端均通过 FP64 抽样正确性检查。记录包含硬件、运行时、实现、分配策略、Event 采样及每个输出的误差。NPU kernel-only 对比使用 msprof 的 `Task Duration(us)`，与 Event 区间分表记录；跨设备性能表见[mHC 性能记录](performance/mhc-post-backward.md)。
+两端均通过 FP64 抽样正确性检查。记录包含硬件、运行时、实现、分配策略、Event 采样及每个输出的误差。NPU kernel-only 对比使用 msprof 的 `Task Duration(us)`，与 Event 区间分表记录；跨设备性能表见[mHC 性能记录](performance/mhc_post_backward.md)。
 
 ## 4. Profiler
 
