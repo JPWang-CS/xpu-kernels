@@ -22,9 +22,16 @@ def check(root: Path = ROOT) -> list[str]:
             errors.append(f"invalid operator name: {op}")
         for relative in (f"src/xpu_kernels/{op}.py", f"src/xpu_kernels/{op}_golden.py",
                          f"src/xpu_kernels/{op}_workload.py", f"tests/test_{op}.py",
-                         f"docs/operators/{op}.md"):
+                         f"docs/operators/{op}/README.md", f"docs/operators/{op}/optimization.md"):
             if not (root / relative).is_file():
                 errors.append(f"missing {relative}")
+        document_dir = root / "docs/operators" / op
+        if (root / f"docs/operators/{op}.md").exists():
+            errors.append(f"operator docs must use their own folder: {op}")
+        if document_dir.is_dir():
+            extra = {p.name for p in document_dir.glob("*.md")} - {"README.md", "optimization.md"}
+            if extra:
+                errors.append(f"operator docs use README.md and optimization.md: {op}: {sorted(extra)}")
         implementations = list((package / "backends").glob(f"{op}_*.py"))
         if not implementations:
             errors.append(f"no backend for {op}")

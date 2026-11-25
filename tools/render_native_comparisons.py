@@ -73,13 +73,13 @@ def homepage():
 
 ![RMSNorm — NPU 原生与优化](docs/assets/benchmark-rmsnorm.png)
 
-[RMSNorm 完整文档](docs/operators/rms_norm.md)
+[RMSNorm 完整文档](docs/operators/rms_norm/README.md)
 
 ### mHC Post Backward
 
 ![mHC Post Backward — NPU 与 GPU](docs/assets/benchmark-mhc.png)
 
-[mHC Post Backward 完整文档](docs/operators/mhc_post_backward.md)"""
+[mHC Post Backward 完整文档](docs/operators/mhc_post_backward/README.md)"""
 
 
 def legacy_documents():
@@ -227,6 +227,25 @@ python -m xpu_kernels.cli bench --device npu --native-reference \
 - [NPU 三种精度对照](rmsnorm-native.md) · [预分配输出测试](rmsnorm-preallocated.md)：保留 FP32 / FP16 / BF16 的历史测量及 profiler 数据。
 - [公式与接口](../operators/rms_norm.md) · [采集方法](../benchmarking.md)
 """
+    from doc_sections import measured_body, relocate_links, update_measured_section
+    previous = "docs/performance/mhc_post_backward.md"
+    relative = "docs/operators/mhc_post_backward/optimization.md"
+    body = files.pop(ROOT / previous)
+    examples = [(2048, 4, 6144), (32768, 4, 6144)]
+    interpretation = "\n## 结果怎么读\n\n"
+    for shape in examples:
+        native = latency(mhc[(shape, "bfloat16", "native")])
+        optimized = latency(mhc[(shape, "bfloat16", "optimized")])
+        interpretation += (f"{' × '.join(map(str, shape))}：原生 {native:.2f} μs，优化 {optimized:.2f} μs，"
+                           f"加速 {native/optimized:.2f}×。")
+    interpretation += ("这些是同一 NPU 上完整内核的对照结果，包含合批、grad_y 共享、Vector 融合、分块和流水的共同作用。"
+                       "GPU 列保留对应硬件的独立实测，便于按 shape 查看不同实现的表现。\n")
+    body += interpretation
+    target = ROOT / relative
+    for path in files:
+        source = path.relative_to(ROOT).as_posix()
+        files[path] = relocate_links(files[path], source, source)
+    files[target] = update_measured_section(target, measured_body(body, previous, relative))
     return files
 
 

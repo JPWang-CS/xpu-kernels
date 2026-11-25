@@ -1,0 +1,12 @@
+{
+  "type": "data_dependency_diagram",
+  "generator": "ImageGen",
+  "image": "dataflow.png",
+  "source": [
+    "kernels/include/xpu_kernels/mhc_post_backward/cube.hpp",
+    "kernels/include/xpu_kernels/mhc_post_backward/vector.hpp",
+    "src/xpu_kernels/mhc_post_backward_golden.py"
+  ],
+  "specification": "图中文字与接口同名：x、grad_y、h_res、h_out、h_post。x只向Cube提供grad_h_res输入；grad_y经GM到UB搬入后，一份送Vector，一份整理到L1供Cube；h_res、h_out、h_post送Vector。Cube算x@grad_y转置；Vector算h_res@grad_y、h_post@grad_y、grad_y@h_out。每个参数旁标注中文用途。",
+  "review": "核对原参数名、单token shape、残差混合方向、四个梯度、Cube/Vector职责、grad_y共享、x独立搬运和输出dtype；图表示数据流，未使用设备时间。"
+}

@@ -11,6 +11,12 @@ Use this skill for changes to operators and their correctness/performance workfl
 
 Read [the canonical layout](../../docs/repository-layout.md) before adding or moving files. Every operator uses its snake_case API name for its Python API, golden, workload, backend filenames, native directory, tests, and guide. Backend modules are `<operator>_cuda.py`, `<operator>_triton.py`, and `<operator>_ascend.py` as needed. The shared NPU loader is `backends/_ascend.py`, with common bindings in `csrc/ascend/bindings.cpp`. Each operator owns a flat `kernels/include/xpu_kernels/<operator>/` directory and enters through `kernel.hpp`. Reuse the CLI and build system. Run `python tools/check_repository_layout.py`; its required-file and include checks must pass with the relevant correctness and package checks. Keep original measurement and third-party provenance names intact.
 
+## Operator documentation
+
+Operator documentation uses exactly two Markdown files under `docs/operators/<operator>/`: `README.md` for function, equations, API, supported scope and run commands; `optimization.md` for original implementation, bottleneck, design changes, code, dataflow, precision and measured results. Keep diagrams under `figures/`. Reuse prior confirmed discussions and source/results, explain in plain written language, and introduce hardware abbreviations with their meaning. Put the relevant formula, code and picture together, followed by matched measurements and tradeoffs. Generated measurement blocks update only their marked section; preserve the surrounding design narrative. Run the layout and link checks after moves.
+
+Use actual interface/source parameter names in prose, formulas and figures, with a short explanation at first use. For example keep `h_res`, `h_out`, `h_post`, `grad_y` and `x`; do not introduce H/u/p/G/X aliases that the reader must translate back to code.
+
 ## RMSNorm contract
 
 - Public API remains `xpu_kernels.rms_norm(x, weight, eps=1e-5, out=None, *, implementation=None)`. CUDA accepts the default/`"cuda"` path or `"triton"`. NPU accepts `None`, `"auto"`, `"ascendc"` (alias of `"auto"`), `"native"`, and `"optimized"`.
@@ -83,7 +89,7 @@ Keep the root README focused on library purpose, installation and a minimal API 
 
 `mhc_post_backward(grad_y, x, h_res, h_out, h_post, out=None, *, implementation="auto")` returns four gradients. Its independent CPU FP64 golden is `xpu_kernels.mhc_post_backward.mhc_post_backward_golden`, also checked against PyTorch autograd.
 
-The shared API accepts contiguous TND/BSND input with four residual streams, FP16/BF16 data, FP32 mixing coefficients, 512..49152 tokens and D<=8192. On CUDA, the DeepSeek TileKernels TileLang implementation supports BF16 and D divisible by 128. `auto`, `optimized` and `tilelang` select that GPU implementation. On Ascend 950, the optimized kernel applies to BF16, 2048..49152 tokens, N=4, h_res present and D in {2560,5120,6144,7168}. NPU `auto` selects that kernel inside the range and CANN mainline outside it; `native` selects `torch_npu.npu_mhc_post_backward` / `aclnnMhcPostBackward`. See `docs/operators/mhc_post_backward.md`.
+The shared API accepts contiguous TND/BSND input with four residual streams, FP16/BF16 data, FP32 mixing coefficients, 512..49152 tokens and D<=8192. On CUDA, the DeepSeek TileKernels TileLang implementation supports BF16 and D divisible by 128. `auto`, `optimized` and `tilelang` select that GPU implementation. On Ascend 950, the optimized kernel applies to BF16, 2048..49152 tokens, N=4, h_res present and D in {2560,5120,6144,7168}. NPU `auto` selects that kernel inside the range and CANN mainline outside it; `native` selects `torch_npu.npu_mhc_post_backward` / `aclnnMhcPostBackward`. See `docs/operators/mhc_post_backward/README.md`.
 
 ```bash
 python -m pip install -e '.[gpu,mhc-gpu,dev]'

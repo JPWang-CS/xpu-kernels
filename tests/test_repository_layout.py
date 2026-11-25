@@ -40,6 +40,17 @@ class RepositoryLayoutTests(unittest.TestCase):
         with patch.object(Path, "read_text", changed):
             self.assertTrue(any("missing.hpp" in e for e in layout.check()))
 
+    def test_missing_operator_design_document_is_rejected(self):
+        original = Path.is_file
+
+        def missing(path):
+            if path == ROOT / "docs/operators/rms_norm/optimization.md":
+                return False
+            return original(path)
+
+        with patch.object(Path, "is_file", missing):
+            self.assertIn("missing docs/operators/rms_norm/optimization.md", layout.check())
+
 
 if __name__ == "__main__":
     unittest.main()

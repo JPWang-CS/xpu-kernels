@@ -33,7 +33,7 @@ y = rms_norm(x, weight)
 
 ## 算子
 
-**RMSNorm** 沿最后一维归一化并应用权重，计算顺序与 CANN 主线一致。NPU 按输入选择主线原生或优化实现，GPU 提供 CUDA 与 Triton 实现。见 [RMSNorm 完整文档](docs/operators/rms_norm.md)。
+**RMSNorm** 沿最后一维归一化并应用权重，计算顺序与 CANN 主线一致。NPU 按输入选择主线原生或优化实现，GPU 提供 CUDA 与 Triton 实现。见 [RMSNorm 完整文档](docs/operators/rms_norm/README.md)。
 
 **mHC Post Backward** 计算残差混合过程的四个梯度，提供 GPU 与昇腾 NPU 实现。
 
@@ -53,13 +53,13 @@ y = rms_norm(x, weight)
 
 ![RMSNorm — NPU 原生与优化](docs/assets/benchmark-rmsnorm.png)
 
-[RMSNorm 完整文档](docs/operators/rms_norm.md)
+[RMSNorm 完整文档](docs/operators/rms_norm/README.md)
 
 ### mHC Post Backward
 
 ![mHC Post Backward — NPU 与 GPU](docs/assets/benchmark-mhc.png)
 
-[mHC Post Backward 完整文档](docs/operators/mhc_post_backward.md)
+[mHC Post Backward 完整文档](docs/operators/mhc_post_backward/README.md)
 <!-- END homepage-performance -->
 
 ## License

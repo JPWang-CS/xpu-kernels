@@ -81,8 +81,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    target = ROOT / "docs/performance/rms_norm.md"
-    expected = render()
+    from doc_sections import measured_body, update_measured_section
+    relative = "docs/operators/rms_norm/optimization.md"
+    target = ROOT / relative
+    expected = update_measured_section(target, measured_body(render(), "docs/performance/rms_norm.md", relative))
     if args.check:
         if target.read_text(encoding="utf-8") != expected:
             raise SystemExit("RMSNorm CANN table is stale")

@@ -29,8 +29,10 @@ kernels/include/xpu_kernels/
     *.hpp                          # 计算、tiling 等必要实现文件
     LICENSE                        # 对应源码许可证
 tests/test_<operator>.py
-docs/operators/<operator>.md
-docs/performance/<operator>.md      # 有实测结果后添加
+docs/operators/<operator>/
+  README.md                        # 功能、公式、接口、范围、运行方法
+  optimization.md                  # 设计、瓶颈、代码、精度、图及实测结果
+  figures/                         # 本算子的数据流和设计示意图
 ```
 
 公共计时、环境检查、CLI 和结果校验保留在 `bench.py`、`environment.py`、`cli.py` 等公共模块。算子通过它们运行相同的流程。仅在使用相应后端时添加实现文件；第三方源码保留原始许可证及必要的原始标识。
@@ -42,7 +44,7 @@ Ascend C 每个算子只有一个设备目录，内部按功能平铺。RMSNorm 
 1. 确定算子名与数学定义，写清输入、输出、dtype、布局、epsilon 等数值条件；在 `<operator>_golden.py` 实现独立参考。
 2. 在 `<operator>.py` 建立公开接口和参数检查，按实际设备添加同名后端。Ascend C 使用公共加载器及本算子的 `kernel.hpp`，同时在 `bindings.cpp` 注册接口、在 `_ascend.py` 的源文件列表加入 Host 文件；CUDA C++、Triton、TileLang 按各自工具链构建。
 3. 在 `tests/test_<operator>.py` 覆盖对齐、非对齐、小输入和模型输入，检查错误参数及非默认 stream。把采集负载接入 `<operator>_workload.py` 与现有 CLI。
-4. 在 `docs/operators/<operator>.md` 写清公式、接口、原生实现、优化范围和执行命令。在包入口导出 API 后运行结构检查、正确性、安装包检查，再运行 benchmark 与 profiler。
+4. 在 `docs/operators/<operator>/README.md` 写清功能、公式、接口、适用范围和执行命令，在 `optimization.md` 连续解释原生实现、瓶颈、设计改动、关键代码、数据流与精度取舍，紧接实测结果。每个算子保持这两份正文，配图放 `figures/`。在包入口导出 API 后运行结构检查、正确性、安装包检查，再运行 benchmark 与 profiler。
 5. 实测结果沿用 `results/benchmarks/` 的 JSONL 格式。保留设备型号、shape、dtype、实现、数值合同、计时方式与逐批样本；对照表由这些记录生成。首页只放已验证的优化图与算子入口。性能图统一由 `tools/render_homepage_charts.py` 生成，每个算子单独出图，共用一套字体、配色、面板、坐标轴和两位小数格式；新增算子只增加数据定义。
 
 ```bash
@@ -58,6 +60,8 @@ python -m xpu_kernels.cli profile --device npu --operator <operator> --tool mspr
 ## 维护约定
 
 当前版本的源码使用算子名及功能名。`native`、`optimized` 是实现选择参数，CANN 等来源写入文档和第三方说明。历史 JSONL、profiler 符号和原始采集文件保留当时的名字，测量时间与当前源码分开解释。
+
+优化文档先说明数据和公式，再把瓶颈与具体改动连起来。代码片段直接放在对应解释旁边，缩写在首次出现时说明。图服务于当前机制：数据流图解释数据在哪、怎样搬、谁计算；性能图展示匹配条件下的实测；真实设备流水保留原始时间和采样信息。已测结论与后续设想分别说明，保留精度不通过或性能退化的原因。实测表由脚本更新 `optimization.md` 中的 `measured-performance` 区块，其余设计正文保持不变。历史测量与原始 CSV 继续保存在 `docs/performance/` 和 `results/benchmarks/`。
 
 打包沿用一套 `setup.py`，将 `csrc/`、`kernels/include/` 和 DeepJIT 资源一并放入 wheel。新增算子不复制构建系统。源码目录与 wheel 均须核对资源完整性，设备构建和执行记录单独保存。
 

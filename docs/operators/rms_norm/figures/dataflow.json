@@ -1,0 +1,11 @@
+{
+  "type": "data_dependency_diagram",
+  "generator": "ImageGen",
+  "image": "dataflow.png",
+  "source": [
+    "kernels/include/xpu_kernels/rms_norm/row_retain.hpp",
+    "kernels/include/xpu_kernels/rms_norm/row_prefetch.hpp"
+  ],
+  "specification": "保留一行BF16 X用于平方和和Y计算；gamma在UB复用；Vector产生rstd并计算X*rstd*gamma，最后转换到BF16；MTE2搬入，MTE3写回。M2048使用2个X槽和整行Y，M4096使用3个X槽和两段Y。",
+  "review": "核对X复用、rstd依赖、gamma输入、输出dtype及两种配置。图表示依赖，未使用时间刻度。"
+}
