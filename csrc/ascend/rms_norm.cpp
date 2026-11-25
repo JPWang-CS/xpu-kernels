@@ -11,6 +11,8 @@
 
 std::vector<torch::Tensor> mhc_post_backward(torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor,
     torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, bool);
+std::vector<torch::Tensor> rms_norm_cann_optimized(
+    torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, double);
 
 namespace {
 
@@ -98,6 +100,8 @@ torch::Tensor rms_norm(torch::Tensor x, torch::Tensor weight, torch::Tensor out,
 }  // namespace
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, module) {
+    module.def("rms_norm_cann_optimized", &rms_norm_cann_optimized,
+               "CANN-compatible RMSNorm selected-shape AscendC kernels");
     module.def("mhc_post_backward", &mhc_post_backward, "NPU mixed Cube/Vector mHC post backward");
     module.def("rms_norm", &rms_norm, "xpu-kernels AscendC RMSNorm");
 }

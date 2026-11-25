@@ -11,7 +11,7 @@ def make_cuda_composed(x, weight, out, eps=1e-5):
             x32 = x.float()
             variance = (x32*x32).mean(dim=-1,keepdim=True)
             normalized = x32*torch.rsqrt(variance+eps)
-            return normalized.to(x.dtype)*weight
+            return (normalized*weight.float()).to(x.dtype)
         return allocating_call
     width = x.shape[-1]
     rows = x.numel() // width
@@ -20,7 +20,8 @@ def make_cuda_composed(x, weight, out, eps=1e-5):
     squared = torch.empty_like(x32)
     variance = torch.empty((rows, 1), device=x.device, dtype=torch.float32)
     normalized32 = torch.empty_like(x32)
-    normalized = normalized32 if x.dtype == torch.float32 else torch.empty_like(original)
+    weighted32 = torch.empty_like(x32)
+    weight32 = weight.float()
     destination = out.reshape(rows, width)
 
     def call():
@@ -31,9 +32,8 @@ def make_cuda_composed(x, weight, out, eps=1e-5):
         torch.add(variance, eps, out=variance)
         torch.rsqrt(variance, out=variance)
         torch.mul(x32, variance, out=normalized32)
-        if x.dtype != torch.float32:
-            normalized.copy_(normalized32)
-        torch.mul(normalized, weight, out=destination)
+        torch.mul(normalized32, weight32, out=weighted32)
+        destination.copy_(weighted32)
         return out
 
     return call

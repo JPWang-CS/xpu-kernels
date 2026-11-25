@@ -65,7 +65,8 @@ def _load_extension():
     ldflags.extend(f"-Wl,-rpath,{path}" for path in libraries)
     return load(
         name="xpu_kernels_ascend",
-        sources=[str(source), str(root / "csrc" / "ascend" / "mhc_post_backward.cpp")],
+        sources=[str(source), str(root / "csrc" / "ascend" / "mhc_post_backward.cpp"),
+                 str(root / "csrc" / "ascend" / "rms_norm_cann.cpp")],
         extra_cflags=["-std=c++20", "-O3", "-fPIC", "-DDJ_DISABLE_GIL=1"],
         extra_include_paths=[str(path) for path in includes],
         extra_ldflags=ldflags,
@@ -75,8 +76,15 @@ def _load_extension():
     )
 
 
-def rms_norm_npu(x, weight, eps: float, out):
+def rms_norm_npu(x, weight, eps: float, out, *, implementation="auto"):
     if x.device.type != "npu":
         raise RuntimeError("NPU backend requires an NPU tensor")
+    from ..rms_norm_dispatch import rms_norm_npu_with_rstd
+    return rms_norm_npu_with_rstd(x, weight, eps, out=out, implementation=implementation)[0]
+
+
+def rms_norm_cann_npu(x, weight, eps: float, y, rstd):
+    """Launch the selected CANN-compatible kernel on the current NPU stream."""
     module = _load_extension()
-    return module.rms_norm(x, weight, out, eps)
+    module.rms_norm_cann_optimized(x, weight, y, rstd, eps)
+    return y, rstd

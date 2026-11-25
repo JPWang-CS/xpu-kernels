@@ -14,7 +14,7 @@ HAS_TORCH_NPU = importlib.util.find_spec("torch_npu") is not None
 
 @unittest.skipUnless(HAS_TORCH, "PyTorch is not installed")
 class GoldenTests(unittest.TestCase):
-    def test_cast_before_gamma_contract_and_output_dtype(self):
+    def test_final_cast_after_gamma_contract_and_output_dtype(self):
         import torch
 
         from xpu_kernels.golden import rms_norm_golden
@@ -23,8 +23,8 @@ class GoldenTests(unittest.TestCase):
         w = torch.tensor([0.3, -1.1, 2.0], dtype=torch.bfloat16)
         got = rms_norm_golden(x, w, 1e-5)
         x32 = x.float()
-        expected_norm = (x32 * torch.rsqrt((x32 * x32).mean(-1, keepdim=True) + 1e-5)).to(x.dtype)
-        expected = (expected_norm * w).to(x.dtype)
+        expected_norm = x32 * torch.rsqrt((x32 * x32).mean(-1, keepdim=True) + 1e-5)
+        expected = (expected_norm * w.float()).to(x.dtype)
         self.assertEqual(got.dtype, x.dtype)
         torch.testing.assert_close(got, expected)
 
@@ -115,6 +115,49 @@ class GpuKernelTests(unittest.TestCase):
 
 @unittest.skipUnless(_available("npu"), "NPU device or torch_npu is unavailable")
 class NpuKernelTests(unittest.TestCase):
+    def test_ascend950_rms_norm_native_optimized_outputs_and_public_out_on_stream(self):
+        import torch
+        import torch_npu  # noqa: F401
+
+        hardware = str(torch.npu.get_device_name(torch.npu.current_device()))
+        if not hardware.startswith("Ascend950"):
+            self.skipTest(f"target test requires Ascend950, found {hardware}")
+
+        from xpu_kernels import rms_norm
+        from xpu_kernels.rms_norm_dispatch import rms_norm_npu_with_rstd
+
+        for rows in (2048, 4096):
+            with self.subTest(rows=rows):
+                torch.manual_seed(20261125 + rows)
+                x = torch.randn((rows, 20480), device="npu", dtype=torch.bfloat16)
+                weight = torch.randn((20480,), device="npu", dtype=torch.bfloat16)
+                native_y = torch.empty_like(x)
+                native_rstd = torch.empty((rows, 1), device="npu", dtype=torch.float32)
+                optimized_y = torch.empty_like(x)
+                optimized_rstd = torch.empty((rows, 1), device="npu", dtype=torch.float32)
+                public_out = torch.empty_like(x)
+                stream = torch.npu.Stream()
+
+                with torch.npu.stream(stream):
+                    native_y_result, native_rstd_result = rms_norm_npu_with_rstd(
+                        x, weight, 1e-5, out=native_y, rstd_out=native_rstd, implementation="native"
+                    )
+                    optimized_y_result, optimized_rstd_result = rms_norm_npu_with_rstd(
+                        x, weight, 1e-5, out=optimized_y, rstd_out=optimized_rstd,
+                        implementation="optimized",
+                    )
+                    public_result = rms_norm(x, weight, 1e-5, out=public_out, implementation="optimized")
+
+                stream.synchronize()
+                self.assertIs(native_y_result, native_y)
+                self.assertIs(native_rstd_result, native_rstd)
+                self.assertIs(optimized_y_result, optimized_y)
+                self.assertIs(optimized_rstd_result, optimized_rstd)
+                self.assertIs(public_result, public_out)
+                torch.testing.assert_close(optimized_y, native_y, rtol=1e-2, atol=7.8125e-3)
+                torch.testing.assert_close(optimized_rstd, native_rstd, rtol=1e-5, atol=1e-6)
+                torch.testing.assert_close(public_out, optimized_y, rtol=1e-2, atol=7.8125e-3)
+
     def test_multishape_multidtype_against_golden(self):
         import torch
         import torch_npu  # noqa: F401

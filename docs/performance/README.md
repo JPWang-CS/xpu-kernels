@@ -1,14 +1,18 @@
 # RMSNorm 性能
 
+当前实现采用 CANN 主线的计算顺序，目标 shape 的原生与优化对照见 [CANN RMSNorm 性能](rmsnorm-cann.md)。以下保留旧数值约定下的多 shape 测量。
+
+## 历史多 shape 测量
+
 **BF16 · μs/次 · 48 个 shape**。NPU 950DT 和 GPU L20X 的同 shape 结果放在同一行，分别展示原生实现、本库实现及 GPU 单算子拼接。
 
 ## 测量方法
 
 设备 Event / Eager 调用区间，预热 20 次，10 批 × 50 次，取批均值的中位数。各实现每次调用均分配输出；Event 区间可能包含 CPU 提交间隙。原生 NPU 额外返回 rstd，本库接口返回归一化结果。
 
-本库及 GPU 单算子拼接按 FP32 计算归一化值，转回输入精度后乘权重。CANN / PyTorch 原生 RMSNorm 按各自融合公式计算，分别使用对应独立公式检查数值。表中保留全部 shape，包括原生或 Triton 更快的结果。
+这些历史记录中的旧库实现及 GPU 单算子拼接先将归一化值转回输入精度，再乘权重；CANN / PyTorch 原生实现最后转换输出精度。各自按对应公式检查。当前代码已统一为主线顺序，旧数据保留原有数值约定。
 
-| Shape | NPU 950DT（原生） | NPU 950DT（优化） | GPU L20X | GPU L20X（Triton） | GPU L20X（单算子拼接） | GPU L20X（原生） |
+| Shape | NPU 950DT（原生） | NPU 950DT（旧实现） | GPU L20X | GPU L20X（Triton） | GPU L20X（单算子拼接） | GPU L20X（原生） |
 |---|---:|---:|---:|---:|---:|---:|
 | 1 × 128 | 15.870 | 12.476 | 9.066 | 18.244 | 43.840 | 7.793 |
 | 128 × 128 | 16.881 | 12.541 | 8.843 | 18.257 | 44.008 | 7.925 |
@@ -59,7 +63,7 @@
 | 4096 × 4096 | 19.397 | 100.182 | 31.529 | 19.707 | 261.373 | 27.752 |
 | 4096 × 8192 | 35.431 | 143.905 | 58.618 | 37.137 | 491.585 | 57.644 |
 
-## 环境与复现
+## 历史环境与当前重测
 
 NPU：Ascend950DT_9582，PyTorch 2.9.0+cpu，torch_npu 2.9.0.post7.dev20260817，CANN 9.2.0 B096。
 GPU：NVIDIA L20X，CC 9.0，PyTorch 2.13.0+cu126，CUDA runtime 12.6，NVCC 12.8，Triton 3.7.1。
@@ -67,10 +71,10 @@ GPU：NVIDIA L20X，CC 9.0，PyTorch 2.13.0+cu126，CUDA runtime 12.6，NVCC 12.
 ```bash
 python -m xpu_kernels.cli bench --device cuda --native-reference --dtypes bfloat16 \
   --warmup 20 --batches 10 --iterations-per-batch 50 \
-  --output results/benchmarks/rmsnorm-gpu-mainline.jsonl
+  --output results/benchmarks/rmsnorm-gpu-current.jsonl
 python -m xpu_kernels.cli bench --device npu --native-reference \
   --warmup 20 --batches 10 --iterations-per-batch 50 \
-  --output results/benchmarks/rmsnorm-npu-mainline.jsonl
+  --output results/benchmarks/rmsnorm-npu-current.jsonl
 ```
 
 ## 完整记录

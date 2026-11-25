@@ -47,10 +47,9 @@ __global__ void rms_norm_cuda_kernel(
 
     for (int64_t column = threadIdx.x; column < width; column += BlockThreads) {
         const float value = static_cast<float>(input[row_offset + column]);
-        // Materializing scalar_t enforces the golden's rounding before multiplication.
-        const scalar_t normalized = static_cast<scalar_t>(__fmul_rn(value, inverse_rms));
+        const float normalized = __fmul_rn(value, inverse_rms);
         const float result = __fmul_rn(
-            static_cast<float>(normalized), static_cast<float>(weight[column]));
+            normalized, static_cast<float>(weight[column]));
         output[row_offset + column] = static_cast<scalar_t>(result);
     }
 }

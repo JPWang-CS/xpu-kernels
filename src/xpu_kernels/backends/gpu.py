@@ -27,8 +27,6 @@ def _rms_norm_kernel(X, W, Y, WIDTH: tl.constexpr, EPS: tl.constexpr, BLOCK: tl.
     w = tl.load(W + col, col < WIDTH, other=0)
     mean_square = tl.sum(x * x, axis=0) / WIDTH
     normalized = x * tl.rsqrt(mean_square + EPS)
-    # Preserve the golden's cast-before-gamma rounding for low precision.
-    normalized = normalized.to(Y.dtype.element_ty).to(tl.float32)
     result = normalized * w.to(tl.float32)
     tl.store(Y + row * WIDTH + col, result, col < WIDTH)
 

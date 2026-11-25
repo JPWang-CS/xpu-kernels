@@ -8,6 +8,8 @@ import statistics
 from datetime import datetime, timezone
 from pathlib import Path
 
+from .rms_norm_dispatch import NUMERICAL_CONTRACT, optimized_rms_norm_scope
+
 
 def _cann_version() -> str | None:
     configured = os.environ.get("CANN_VERSION")
@@ -65,7 +67,7 @@ def _native_baseline(device: str, torch, x, weight, eps: float):
         return call, {
             "status": "available",
             "name": "torch.nn.functional.rms_norm",
-            "semantics": "Native RMSNorm applies gamma before the final output cast; it does not materialize the normalized input-dtype tensor required by the Pangu contract.",
+            "semantics": "Native CUDA RMSNorm applies the weight before the final output cast.",
             "allocates_output": True,
         }
 
@@ -84,7 +86,7 @@ def _native_baseline(device: str, torch, x, weight, eps: float):
     return call, {
         "status": "available",
         "name": "torch_npu.npu_rms_norm",
-        "semantics": "CANN native RMSNorm is checked against the fused formula with one final output cast; Pangu rounds the normalized value to input dtype before multiplying gamma.",
+        "semantics": "CANN mainline RMSNorm applies the weight before the final output cast.",
         "allocates_output": True,
     }
 
@@ -110,6 +112,62 @@ def _benchmark_out(torch, x, device: str, include_native_baseline: bool):
     return torch.empty_like(x)
 
 
+def _execution_path(device: str, implementation: str, x, weight, eps: float, hardware: str) -> str:
+    """Describe the actual RMSNorm route represented by a new record."""
+    if device == "cuda":
+        return {
+            "cuda": "cuda_cpp",
+            "triton": "triton",
+            "torch": "torch_composition",
+            "native": "cuda_native",
+        }[implementation]
+    if implementation == "native":
+        return "mainline"
+    if optimized_rms_norm_scope(x, weight, eps, device_name=hardware):
+        return "2slot" if x.numel() // x.shape[-1] == 2048 else "3slot"
+    return "mainline"
+
+
+def _output_allocation_metadata(
+    device: str, implementation: str, per_call: bool, execution_path: str
+) -> dict[str, str]:
+    if device == "npu":
+        if execution_path == "mainline" and not per_call:
+            return {
+                "strategy": "operator_allocates_y_rstd_per_call_copy_to_out",
+                "api_call": f"rms_norm(out=preallocated, implementation={implementation!r})",
+                "event_timing_note": (
+                    "torch.npu.Event measures the same current stream; internal Y=per_call and "
+                    "rstd=per_call, then Y is copied to the destination out; host allocation time is not isolated."
+                ),
+            }
+        y_state = "per_call" if per_call else "preallocated"
+        return {
+            "strategy": (
+                "operator_allocates_y_rstd_per_call"
+                if per_call else "preallocated_y_rstd_per_call"
+            ),
+            "api_call": (
+                "torch_npu.npu_rms_norm"
+                if implementation == "native"
+                else f"rms_norm(out={'None' if per_call else 'preallocated'}, implementation={implementation!r})"
+            ),
+            "event_timing_note": (
+                "torch.npu.Event measures the same current stream; "
+                f"Y={y_state} and rstd=per_call, so host allocation time is not isolated."
+            ),
+        }
+    return {
+        "strategy": "out_none_per_call" if per_call else "preallocated_out",
+        "api_call": (
+            "make_cuda_composed(out=None)" if per_call and implementation == "torch"
+            else "rms_norm(out=None)" if per_call
+            else "rms_norm(out=preallocated)"
+        ),
+        "event_timing_note": f"torch.cuda.Event measures the same current stream on execution_path={execution_path}; host output-allocation time is not isolated.",
+    }
+
+
 def run_benchmark(
     device: str,
     shapes: list[tuple[int, int]],
@@ -130,8 +188,9 @@ def run_benchmark(
         raise ValueError("batches and iterations_per_batch must be positive; warmup must be non-negative")
     if include_native_baseline and not check_correctness:
         raise ValueError("native comparison requires correctness checks before timing")
-    allowed = ("cuda", "triton", "torch") if device == "cuda" else ("ascendc",)
-    selected = allowed if implementations is None else implementations
+    allowed = ("cuda", "triton", "torch") if device == "cuda" else ("auto", "native", "optimized", "ascendc")
+    default_selected = ("cuda", "triton", "torch") if device == "cuda" else ("auto",)
+    selected = default_selected if implementations is None else implementations
     if not selected or len(set(selected)) != len(selected) or any(x not in allowed for x in selected):
         raise ValueError(f"{device} implementations must be unique selections from {allowed}")
     device_module = torch.cuda if device == "cuda" else torch.npu
@@ -168,9 +227,19 @@ def run_benchmark(
                 expected = rms_norm_golden(x, weight, eps=1e-5) if check_correctness else None
                 rtol, atol = _tolerances(torch, dtype)
                 cases = []
-                native_info = {"status": "not_requested"}
+                native_info = (
+                    {
+                        "status": "self",
+                        "name": "torch_npu.npu_rms_norm" if device == "npu" else "torch.nn.functional.rms_norm",
+                        "semantics": "CANN mainline RMSNorm applies the weight before the final output cast."
+                        if device == "npu" else "Native CUDA RMSNorm applies the weight before the final output cast.",
+                        "allocates_output": True,
+                    }
+                    if "native" in selected else {"status": "not_requested"}
+                )
                 for implementation in selected:
                     allocate_output_per_call = include_native_baseline
+                    execution_path = _execution_path(device, implementation, x, weight, 1e-5, hardware)
                     out = _benchmark_out(torch, x, device, include_native_baseline)
                     if implementation == "torch":
                         op = make_cuda_composed(x, weight, out)
@@ -182,21 +251,12 @@ def run_benchmark(
                         stream.synchronize()
                         torch.testing.assert_close(actual, expected, rtol=rtol, atol=atol)
                         max_abs = (actual.float()-expected.float()).abs().max().item()
-                    cases.append((implementation, op, max_abs, {
-                        "strategy": "out_none_per_call" if allocate_output_per_call else "preallocated_out",
-                        "api_call": (
-                            "make_cuda_composed(out=None)" if allocate_output_per_call and implementation == "torch"
-                            else "rms_norm(out=None)" if allocate_output_per_call
-                            else "rms_norm(out=preallocated)"
-                        ),
-                        "event_timing_note": (
-                            "torch.npu.Event measures device-stream elapsed time; CPU submission gaps may appear in the interval, "
-                            "and host output-allocation time is not isolated."
-                            if device == "npu" else
-                            "torch.cuda.Event measures device-stream elapsed time; host output-allocation time is not isolated."
-                        ),
-                    }, "xpu_kernels.golden.rms_norm_golden"))
-                if include_native_baseline:
+                    cases.append((implementation, op, max_abs,
+                                  _output_allocation_metadata(
+                                      device, implementation, allocate_output_per_call, execution_path
+                                  ),
+                                  "xpu_kernels.golden.rms_norm_golden"))
+                if include_native_baseline and "native" not in selected:
                     native_call, native_info = _native_baseline(device, torch, x, weight, 1e-5)
                     if native_call is not None:
                         native_result = native_call()
@@ -204,22 +264,20 @@ def run_benchmark(
                         native_expected = _native_rms_norm_reference(torch, x, weight, 1e-5)
                         torch.testing.assert_close(native_result, native_expected, rtol=rtol, atol=atol)
                         native_max_abs = (native_result.float()-native_expected.float()).abs().max().item()
-                        cases.append(("native", native_call, native_max_abs, {
-                            "strategy": "operator_allocates_output_per_call",
-                            "api_call": native_info["name"],
-                            "event_timing_note": (
-                                "torch.npu.Event measures device-stream elapsed time; CPU submission gaps may appear in the interval, "
-                                "and host output-allocation time is not isolated."
-                                if device == "npu" else
-                                "torch.cuda.Event measures device-stream elapsed time; host output-allocation time is not isolated."
-                            ),
-                        }, "xpu_kernels.bench._native_rms_norm_reference"))
+                        cases.append(("native", native_call, native_max_abs,
+                                      _output_allocation_metadata(
+                                          device, "native", True,
+                                          "mainline" if device == "npu" else "cuda_native"
+                                      ),
+                                      "xpu_kernels.bench._native_rms_norm_reference"))
                 # Correctness for every implementation is completed before any timed samples are collected.
                 for implementation, op, max_abs, output_allocation, correctness_reference in cases:
                     samples = _event_samples(op, device_module, stream, warmup, batches, iterations_per_batch)
                     record = {
-                        "schema_version": 4 if include_native_baseline else 3,
+                        "schema_version": 5,
                         "operator": "rms_norm", "implementation": implementation,
+                        "numerical_contract": NUMERICAL_CONTRACT,
+                        "execution_path": _execution_path(device, implementation, x, weight, 1e-5, hardware),
                         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
                         "device": device, "device_index": device_index, "hardware": hardware,
                         "shape": [row_count, width], "dtype": dtype_name,
@@ -238,7 +296,7 @@ def run_benchmark(
                         "baseline_best_ms": None, "speedup_vs_baseline": None,
                         "python": platform.python_version(), "torch": torch.__version__, "runtime": runtime,
                     }
-                    if include_native_baseline:
+                    if record["schema_version"] == 5:
                         record["output_allocation"] = output_allocation
                     records.append(record)
                     print(f"CASE {device}/{implementation} {row_count}x{width} {dtype_name} "
@@ -254,29 +312,48 @@ def validate_benchmark_record(row: dict) -> None:
         "latency_ms_samples", "correctness_reference", "native_baseline", "baseline_best_ms",
         "speedup_vs_baseline", "python", "torch", "runtime",
     }
-    if row.get("schema_version") in (3, 4):
+    if row.get("schema_version") in (3, 4, 5):
         required |= {"operator", "implementation", "correctness"}
-        if row["operator"] != "rms_norm" or row["implementation"] not in ("cuda", "triton", "torch", "ascendc", "native"):
+        if row["operator"] != "rms_norm" or row["implementation"] not in (
+            "cuda", "triton", "torch", "auto", "ascendc", "optimized", "native"
+        ):
             raise ValueError("invalid operator or implementation")
-    if row.get("schema_version") == 4:
+    if row.get("schema_version") == 5:
+        required |= {"numerical_contract", "execution_path", "output_allocation"}
+        if row["numerical_contract"] != NUMERICAL_CONTRACT:
+            raise ValueError("schema 5 requires the current RMSNorm numerical contract")
+        if row["execution_path"] not in (
+            "mainline", "2slot", "3slot", "cuda_cpp", "cuda_native", "triton", "torch_composition"
+        ):
+            raise ValueError("invalid RMSNorm execution path")
+    if row.get("schema_version") in (4, 5):
         required.add("output_allocation")
     if set(row) != required:
         raise ValueError(f"benchmark record fields differ from schema: {sorted(set(row) ^ required)}")
-    if row["schema_version"] not in (2, 3, 4) or len(row["shape"]) != 2:
+    if row["schema_version"] not in (2, 3, 4, 5) or len(row["shape"]) != 2:
         raise ValueError("invalid benchmark record version or shape")
-    if row["schema_version"] == 4:
+    if row["schema_version"] in (4, 5):
         allocation = row["output_allocation"]
         allocation_fields = {"strategy", "api_call", "event_timing_note"}
         if not isinstance(allocation, dict) or set(allocation) != allocation_fields:
             raise ValueError("schema 4 requires explicit output allocation and Event timing metadata")
         if allocation["strategy"] not in (
-            "preallocated_out", "out_none_per_call", "operator_allocates_output_per_call"
+            "preallocated_out", "out_none_per_call", "operator_allocates_output_per_call",
+            "operator_allocates_y_rstd_per_call", "preallocated_y_rstd_per_call",
+            "operator_allocates_y_rstd_per_call_copy_to_out"
         ):
             raise ValueError("invalid output allocation strategy")
         if any(not isinstance(allocation[key], str) or not allocation[key] for key in allocation_fields):
             raise ValueError("output allocation metadata values must be non-empty strings")
-        if row["device"] == "npu" and "CPU submission" not in allocation["event_timing_note"]:
+        if row["schema_version"] == 4 and row["device"] == "npu" and "CPU submission" not in allocation["event_timing_note"]:
             raise ValueError("NPU Event metadata must describe possible CPU submission gaps")
+        if row["schema_version"] == 5 and row["device"] == "npu" and "same current stream" not in allocation["event_timing_note"]:
+            raise ValueError("schema 5 NPU Event metadata must describe same-stream timing")
+        if row["schema_version"] == 5 and row["device"] == "npu" and allocation["strategy"] not in (
+            "operator_allocates_y_rstd_per_call", "preallocated_y_rstd_per_call",
+            "operator_allocates_y_rstd_per_call_copy_to_out"
+        ):
+            raise ValueError("schema 5 NPU records must label Y/rstd allocation")
     if row["batches"] < 1 or len(row["latency_ms_samples"]) != row["batches"]:
         raise ValueError("batch count does not match device-timing sample count")
     if row["iterations_per_batch"] < 1 or row["latency_ms_median"] < 0:
@@ -296,7 +373,7 @@ def _tolerances(torch, dtype) -> tuple[float, float]:
 
 
 def _baseline_allocation_strategy(row: dict) -> str | None:
-    if row.get("schema_version") == 4:
+    if row.get("schema_version") in (4, 5):
         allocation = row.get("output_allocation")
         return allocation.get("strategy") if isinstance(allocation, dict) else None
     # Schemas 2 and 3 benchmarked custom implementations with a preallocated out.
@@ -328,7 +405,7 @@ def attach_existing_baseline(rows: list[dict], results_dir: Path) -> list[dict]:
             continue
         matches = [
             item for item in prior
-            if item.get("schema_version") in (2, 3, 4)
+            if item.get("schema_version") in (2, 3, 4, 5)
             and item.get("operator", "rms_norm") == row.get("operator", "rms_norm")
             and item.get("implementation", "triton" if item.get("device") == "cuda" else "ascendc") == row.get("implementation", "triton" if row.get("device") == "cuda" else "ascendc")
             and item.get("device") == row["device"]
@@ -341,6 +418,8 @@ def attach_existing_baseline(rows: list[dict], results_dir: Path) -> list[dict]:
             and item.get("runtime") == row["runtime"]
             and item.get("torch") == row["torch"]
             and item.get("python") == row["python"]
+            and item.get("numerical_contract") == row.get("numerical_contract")
+            and item.get("execution_path") == row.get("execution_path")
             and all(row.get(key) is not None and item.get(key) == row.get(key) for key in (
                 "warmup_iterations", "batches", "iterations_per_batch",
             ))

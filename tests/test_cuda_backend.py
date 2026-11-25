@@ -126,7 +126,7 @@ class CudaBackendTests(unittest.TestCase):
                     rtol, atol = _tolerances(torch, dtype)
                     torch.testing.assert_close(result, expected, rtol=rtol, atol=atol)
 
-    def test_cast_before_weight_is_visible_for_low_precision(self):
+    def test_final_cast_after_weight_for_low_precision(self):
         import torch
 
         from xpu_kernels import rms_norm
@@ -140,12 +140,12 @@ class CudaBackendTests(unittest.TestCase):
                 expected = rms_norm_golden(x, weight)
                 x32 = x.float()
                 normalized32 = x32 * torch.rsqrt((x32 * x32).mean(-1, keepdim=True) + 1e-5)
-                cast_after_multiply = (normalized32 * weight.float()).to(dtype)
-                self.assertTrue(bool((expected != cast_after_multiply).any().item()))
+                cast_before_multiply = (normalized32.to(dtype) * weight).to(dtype)
+                self.assertTrue(bool((expected != cast_before_multiply).any().item()))
                 actual = rms_norm(x, weight, implementation="cuda")
                 rtol, atol = _tolerances(torch, dtype)
                 torch.testing.assert_close(actual, expected, rtol=rtol, atol=atol)
-                self.assertGreater(int((actual != cast_after_multiply).count_nonzero().item()), 0)
+                self.assertGreater(int((actual != cast_before_multiply).count_nonzero().item()), 0)
 
     def test_one_dimensional_three_dimensional_zero_rows_and_inplace_out(self):
         import torch

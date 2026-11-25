@@ -33,7 +33,7 @@ y = rms_norm(x, weight)
 
 ## 算子
 
-**RMSNorm** 沿最后一维归一化并应用权重，适用于 GPU 与昇腾 NPU 工作负载。见 [RMSNorm 完整文档](docs/operators/rmsnorm.md)。
+**RMSNorm** 沿最后一维归一化并应用权重，计算顺序与 CANN 主线一致。NPU 按输入选择主线原生或优化实现，GPU 提供 CUDA 与 Triton 实现。见 [RMSNorm 完整文档](docs/operators/rmsnorm.md)。
 
 **mHC Post Backward** 计算残差混合过程的四个梯度，提供 GPU 与昇腾 NPU 实现。
 
@@ -44,7 +44,7 @@ y = rms_norm(x, weight)
 优化实现后续可能合入 CANN 上游。NPU 性能对比以测试时 CANN 包内的主线算子为基线。
 
 - **性能**：在相同 shape 和 dtype 下，预热后重复测量并报告耗时中位数；内核耗时与 Event 计时分别记录。
-- **精度**：与独立参考实现核对输出，按算子、输出和 dtype 设置 `atol` / `rtol`，正确性通过后再测性能。
+- **精度**：常规测试核对独立参考结果；优化验收采用精度标准 2.1，逐输出比较 FP64 参考值与同输入的真实 GPU 结果，通过后再测性能。
 
 <!-- BEGIN homepage-performance -->
 ### mHC Post Backward
@@ -56,4 +56,4 @@ y = rms_norm(x, weight)
 
 ## License
 
-公共代码采用 [Apache-2.0](LICENSE)；DeepSeek TileKernels GPU 源码保留随附的 [MIT License](src/xpu_kernels/backends/_tilekernels/LICENSE)；mHC NPU 内核与成本模型保留 [CANN Open Software License 2.0](kernels/include/xpu_kernels/mhc_post_backward/LICENSE)。NPU JIT 运行时使用 [DeepJIT](https://github.com/deepseek-ai/DeepJIT)。[第三方说明](THIRD_PARTY_NOTICES.md)
+公共代码采用 [Apache-2.0](LICENSE)；DeepSeek TileKernels GPU 源码保留随附的 [MIT License](src/xpu_kernels/backends/_tilekernels/LICENSE)；CANN 衍生的 NPU 内核保留 [CANN Open Software License 2.0](kernels/include/xpu_kernels/rms_norm_cann/LICENSE)。NPU JIT 运行时使用 [DeepJIT](https://github.com/deepseek-ai/DeepJIT)。[第三方说明](THIRD_PARTY_NOTICES.md)

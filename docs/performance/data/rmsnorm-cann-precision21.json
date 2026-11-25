@@ -1,0 +1,2900 @@
+{
+  "standard": "precision 2.1 L2 dual benchmark + same-input real GPU + FP64 golden",
+  "limits": {
+    "MARE": 2.0,
+    "MERE": 1.2,
+    "RMSE": 1.2,
+    "Small": 2.0
+  },
+  "contract": "rmsnorm-fp32-normalization-gamma-final-cast",
+  "case_count": 42,
+  "output_decisions": 84,
+  "optimized_cases": 12,
+  "native_cases": 30,
+  "allpass": true,
+  "nondefault_stream": true,
+  "gpu_reference": {
+    "original": {
+      "torch_version": "2.13.0+cu126",
+      "torch_cuda_build_version": "12.6",
+      "device_name": "NVIDIA L20X",
+      "compute_capability": [
+        9,
+        0
+      ],
+      "torch_cuda_execution_completed": true,
+      "gpu_input_roundtrip_bitwise_check": true,
+      "case_count_completed": 36
+    },
+    "stress": {
+      "torch_version": "2.13.0+cu126",
+      "torch_cuda_build_version": "12.6",
+      "device_name": "NVIDIA L20X",
+      "compute_capability": [
+        9,
+        0
+      ],
+      "torch_cuda_execution_completed": true,
+      "gpu_input_roundtrip_bitwise_check": true,
+      "case_count_completed": 6
+    }
+  },
+  "cases": [
+    {
+      "group": "original",
+      "case": "m1_random",
+      "M": 1,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.003870718996018917,
+          "MERE": 0.0014008276572818295,
+          "RMSE": 0.0015250554267879958
+        },
+        "benchmark_metrics": {
+          "MARE": 0.003870718996018917,
+          "MERE": 0.0014008276572818295,
+          "RMSE": 0.0015250554267879958
+        },
+        "ratios": {
+          "MARE": 0.9909040629808428,
+          "MERE": 0.35861188026414836,
+          "RMSE": 0.3904141892577269
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 6.781062145375142e-08,
+          "MERE": 6.781062145375142e-08,
+          "RMSE": 2.6499690497505668e-08
+        },
+        "benchmark_metrics": {
+          "MARE": 8.451174964772421e-09,
+          "MERE": 8.451174964772421e-09,
+          "RMSE": 3.3026318901896445e-09
+        },
+        "ratios": {
+          "MARE": 0.0011110092218982633,
+          "MERE": 0.0011110092218982633,
+          "RMSE": 0.00043417092911113286
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m1_zero",
+      "M": 1,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0,
+          "MERE": 0.0,
+          "RMSE": 0.0
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0,
+          "MERE": 0.0,
+          "RMSE": 0.0
+        },
+        "ratios": {
+          "MARE": 1.0,
+          "MERE": 1.0,
+          "RMSE": 1.0
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 5.4347811726731936e-08,
+          "MERE": 5.4347811726731936e-08,
+          "RMSE": 1.718628709568293e-05
+        },
+        "benchmark_metrics": {
+          "MARE": 4.2157243789881205e-08,
+          "MERE": 4.2157243789881205e-08,
+          "RMSE": 1.3331291029317072e-05
+        },
+        "ratios": {
+          "MARE": 0.000890434547330776,
+          "MERE": 0.000890434547330776,
+          "RMSE": 0.2815801277756691
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m1_mixed_scale",
+      "M": 1,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.003757016352377323,
+          "MERE": 0.0013900447134135054,
+          "RMSE": 0.0013990831268631495
+        },
+        "benchmark_metrics": {
+          "MARE": 0.003757016352377323,
+          "MERE": 0.0013900447134135054,
+          "RMSE": 0.0013990831268631495
+        },
+        "ratios": {
+          "MARE": 0.9617961862085946,
+          "MERE": 0.35585144663385737,
+          "RMSE": 0.3581652804769663
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 1.685946172261923e-08,
+          "MERE": 1.685946172261923e-08,
+          "RMSE": 2.882393039527198e-10
+        },
+        "benchmark_metrics": {
+          "MARE": 1.685946172261923e-08,
+          "MERE": 1.685946172261923e-08,
+          "RMSE": 2.882393039527198e-10
+        },
+        "ratios": {
+          "MARE": 0.00027622542086339346,
+          "MERE": 0.00027622542086339346,
+          "RMSE": 4.722512755961361e-06
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m33_random",
+      "M": 33,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.003887995114453972,
+          "MERE": 0.001410221506604456,
+          "RMSE": 0.0016516425796309158
+        },
+        "benchmark_metrics": {
+          "MARE": 0.003887995114453972,
+          "MERE": 0.0014102215064045903,
+          "RMSE": 0.0016516425792652719
+        },
+        "ratios": {
+          "MARE": 0.9953267493002168,
+          "MERE": 0.36101670569074074,
+          "RMSE": 0.42282050038551444
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 1.2578098074368051e-07,
+          "MERE": 4.0441920288892465e-08,
+          "RMSE": 1.0106153907596116e-07
+        },
+        "benchmark_metrics": {
+          "MARE": 1.458714924318006e-07,
+          "MERE": 5.0151697852222775e-08,
+          "RMSE": 1.1159278930013672e-07
+        },
+        "ratios": {
+          "MARE": 0.0020607955885044616,
+          "MERE": 0.0006626004220132141,
+          "RMSE": 0.0016557922562205477
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m33_zero",
+      "M": 33,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0,
+          "MERE": 0.0,
+          "RMSE": 0.0
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0,
+          "MERE": 0.0,
+          "RMSE": 0.0
+        },
+        "ratios": {
+          "MARE": 1.0,
+          "MERE": 1.0,
+          "RMSE": 1.0
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 5.4347811726731936e-08,
+          "MERE": 5.4347811726731936e-08,
+          "RMSE": 1.718628709568293e-05
+        },
+        "benchmark_metrics": {
+          "MARE": 4.2157243789881205e-08,
+          "MERE": 4.2157243789881205e-08,
+          "RMSE": 1.3331291029317072e-05
+        },
+        "ratios": {
+          "MARE": 0.000890434547330776,
+          "MERE": 0.000890434547330776,
+          "RMSE": 0.2815801277756691
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m33_mixed_scale",
+      "M": 33,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0038889527050499396,
+          "MERE": 0.0014108208759192925,
+          "RMSE": 0.0014322739952522257
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0038889527050499396,
+          "MERE": 0.0014108208756663419,
+          "RMSE": 0.0014322739949982391
+        },
+        "ratios": {
+          "MARE": 0.9955718924927845,
+          "MERE": 0.3611701442353389,
+          "RMSE": 0.36666214278456977
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 1.36523572073498e-07,
+          "MERE": 4.340189662188197e-08,
+          "RMSE": 3.5649337337870735e-10
+        },
+        "benchmark_metrics": {
+          "MARE": 1.1185165824119162e-07,
+          "MERE": 3.292635985382601e-08,
+          "RMSE": 2.5502950132482104e-10
+        },
+        "ratios": {
+          "MARE": 0.002236802204852191,
+          "MERE": 0.0007110966742529142,
+          "RMSE": 5.840787429436741e-06
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m65_random",
+      "M": 65,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.003888612911997702,
+          "MERE": 0.0014109910814210415,
+          "RMSE": 0.0017109310037267636
+        },
+        "benchmark_metrics": {
+          "MARE": 0.003888612911997702,
+          "MERE": 0.0014109910807099937,
+          "RMSE": 0.0017109310009364978
+        },
+        "ratios": {
+          "MARE": 0.9954849054714117,
+          "MERE": 0.3612137168437866,
+          "RMSE": 0.4379983369540515
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 1.306839518089898e-07,
+          "MERE": 4.1144648237376704e-08,
+          "RMSE": 8.896981565194937e-08
+        },
+        "benchmark_metrics": {
+          "MARE": 1.2690210707288552e-07,
+          "MERE": 4.286994364738881e-08,
+          "RMSE": 9.4633492112494e-08
+        },
+        "ratios": {
+          "MARE": 0.002141125866438489,
+          "MERE": 0.0006741139167211799,
+          "RMSE": 0.0014576814596415385
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m65_zero",
+      "M": 65,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0,
+          "MERE": 0.0,
+          "RMSE": 0.0
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0,
+          "MERE": 0.0,
+          "RMSE": 0.0
+        },
+        "ratios": {
+          "MARE": 1.0,
+          "MERE": 1.0,
+          "RMSE": 1.0
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 5.4347811726731936e-08,
+          "MERE": 5.4347811726731936e-08,
+          "RMSE": 1.718628709568293e-05
+        },
+        "benchmark_metrics": {
+          "MARE": 4.2157243789881205e-08,
+          "MERE": 4.2157243789881205e-08,
+          "RMSE": 1.3331291029317072e-05
+        },
+        "ratios": {
+          "MARE": 0.000890434547330776,
+          "MERE": 0.000890434547330776,
+          "RMSE": 0.2815801277756691
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m65_mixed_scale",
+      "M": 65,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.003889459154506495,
+          "MERE": 0.0014095223385021882,
+          "RMSE": 0.0014420479565584424
+        },
+        "benchmark_metrics": {
+          "MARE": 0.003889459154506495,
+          "MERE": 0.001409522337549444,
+          "RMSE": 0.0014420479565521156
+        },
+        "ratios": {
+          "MARE": 0.9957015435536627,
+          "MERE": 0.36083771865656017,
+          "RMSE": 0.36916427687896125
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 1.4939238463865306e-07,
+          "MERE": 3.878327251355168e-08,
+          "RMSE": 2.8276271778757453e-10
+        },
+        "benchmark_metrics": {
+          "MARE": 1.0091947330841849e-07,
+          "MERE": 3.4480905254317535e-08,
+          "RMSE": 1.937199961988161e-10
+        },
+        "ratios": {
+          "MARE": 0.0024476448299196917,
+          "MERE": 0.0006354251368620307,
+          "RMSE": 4.632784368231621e-06
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m2048_random",
+      "M": 2048,
+      "D": 20480,
+      "optimized": true,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.003891134141112171,
+          "MERE": 0.001409486696801273,
+          "RMSE": 0.0017278451635682499
+        },
+        "benchmark_metrics": {
+          "MARE": 0.003891134141112171,
+          "MERE": 0.0014094866967785818,
+          "RMSE": 0.001727845163913214
+        },
+        "ratios": {
+          "MARE": 0.9961303401247158,
+          "MERE": 0.3608285943811259,
+          "RMSE": 0.44232836187347196
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 1.7809157880750156e-07,
+          "MERE": 4.147384511722294e-08,
+          "RMSE": 9.745530700299227e-08
+        },
+        "benchmark_metrics": {
+          "MARE": 1.5905518071751857e-07,
+          "MERE": 4.375779435979393e-08,
+          "RMSE": 1.0277038963439717e-07
+        },
+        "ratios": {
+          "MARE": 0.0029178524271821055,
+          "MERE": 0.0006795074784005806,
+          "RMSE": 0.0015967077499370254
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m2048_zero",
+      "M": 2048,
+      "D": 20480,
+      "optimized": true,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0,
+          "MERE": 0.0,
+          "RMSE": 0.0
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0,
+          "MERE": 0.0,
+          "RMSE": 0.0
+        },
+        "ratios": {
+          "MARE": 1.0,
+          "MERE": 1.0,
+          "RMSE": 1.0
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 5.4347811726731936e-08,
+          "MERE": 5.434781172673196e-08,
+          "RMSE": 1.7186287095682925e-05
+        },
+        "benchmark_metrics": {
+          "MARE": 4.2157243789881205e-08,
+          "MERE": 4.2157243789881205e-08,
+          "RMSE": 1.333129102931707e-05
+        },
+        "ratios": {
+          "MARE": 0.000890434547330776,
+          "MERE": 0.0008904345473307765,
+          "RMSE": 0.28158012777566904
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m2048_mixed_scale",
+      "M": 2048,
+      "D": 20480,
+      "optimized": true,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0038910502624194794,
+          "MERE": 0.0014108538705675127,
+          "RMSE": 0.0014523617804242093
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0038910502624194794,
+          "MERE": 0.0014108538707546918,
+          "RMSE": 0.0014523617805483593
+        },
+        "ratios": {
+          "MARE": 0.9961088671793867,
+          "MERE": 0.36117859086528326,
+          "RMSE": 0.3718046157885976
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 1.6799532505935309e-07,
+          "MERE": 3.753401132101733e-08,
+          "RMSE": 2.627056769394909e-10
+        },
+        "benchmark_metrics": {
+          "MARE": 1.6395122224009937e-07,
+          "MERE": 3.405863748776274e-08,
+          "RMSE": 2.3616017065961675e-10
+        },
+        "ratios": {
+          "MARE": 0.002752435405772441,
+          "MERE": 0.000614957241483548,
+          "RMSE": 4.304169810976619e-06
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m4096_random",
+      "M": 4096,
+      "D": 20480,
+      "optimized": true,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0038911385930329163,
+          "MERE": 0.0014091339828285212,
+          "RMSE": 0.001717122117794007
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0038911385930329163,
+          "MERE": 0.0014091339829220668,
+          "RMSE": 0.0017171221179557335
+        },
+        "ratios": {
+          "MARE": 0.9961314798164266,
+          "MERE": 0.3607382996041014,
+          "RMSE": 0.4395832621552658
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 1.7550792981026673e-07,
+          "MERE": 4.0851793638520254e-08,
+          "RMSE": 9.606690079017794e-08
+        },
+        "benchmark_metrics": {
+          "MARE": 1.7915380970951038e-07,
+          "MERE": 4.416126669948037e-08,
+          "RMSE": 1.0231985889870646e-07
+        },
+        "ratios": {
+          "MARE": 0.00287552192201141,
+          "MERE": 0.0006693157869735158,
+          "RMSE": 0.0015739601025462754
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m4096_zero",
+      "M": 4096,
+      "D": 20480,
+      "optimized": true,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0,
+          "MERE": 0.0,
+          "RMSE": 0.0
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0,
+          "MERE": 0.0,
+          "RMSE": 0.0
+        },
+        "ratios": {
+          "MARE": 1.0,
+          "MERE": 1.0,
+          "RMSE": 1.0
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 5.4347811726731936e-08,
+          "MERE": 5.434781172673196e-08,
+          "RMSE": 1.7186287095682925e-05
+        },
+        "benchmark_metrics": {
+          "MARE": 4.2157243789881205e-08,
+          "MERE": 4.2157243789881205e-08,
+          "RMSE": 1.333129102931707e-05
+        },
+        "ratios": {
+          "MARE": 0.000890434547330776,
+          "MERE": 0.0008904345473307765,
+          "RMSE": 0.28158012777566904
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m4096_mixed_scale",
+      "M": 4096,
+      "D": 20480,
+      "optimized": true,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0038911621229543525,
+          "MERE": 0.001410481718022253,
+          "RMSE": 0.0014530125413494857
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0038911621229543525,
+          "MERE": 0.0014104817181795088,
+          "RMSE": 0.0014530125418705734
+        },
+        "ratios": {
+          "MARE": 0.9961375034763142,
+          "MERE": 0.3610833198136968,
+          "RMSE": 0.37197121058546834
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 1.552712440548455e-07,
+          "MERE": 3.805722434948342e-08,
+          "RMSE": 2.674997175801386e-10
+        },
+        "benchmark_metrics": {
+          "MARE": 1.5468122279349183e-07,
+          "MERE": 3.415804756638403e-08,
+          "RMSE": 2.372226580201403e-10
+        },
+        "ratios": {
+          "MARE": 0.0025439640625945885,
+          "MERE": 0.0006235295637419363,
+          "RMSE": 4.382715372832991e-06
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m1_half_ulp_first_scale0",
+      "M": 1,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.00035515364963200426,
+          "MERE": 0.0003551536496320042,
+          "RMSE": 0.003175313503280819
+        },
+        "benchmark_metrics": {
+          "MARE": 0.00035515364963200426,
+          "MERE": 0.0003551536496320042,
+          "RMSE": 0.003175313503280819
+        },
+        "ratios": {
+          "MARE": 0.09091933430579309,
+          "MERE": 0.09091933430579308,
+          "RMSE": 0.8128802568398896
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 4.719669739451003e-08,
+          "MERE": 4.719669739451003e-08,
+          "RMSE": 4.219703519936502e-07
+        },
+        "benchmark_metrics": {
+          "MARE": 2.605305390337886e-07,
+          "MERE": 2.605305390337886e-07,
+          "RMSE": 2.32931898480615e-06
+        },
+        "ratios": {
+          "MARE": 0.0007732706901116523,
+          "MERE": 0.0007732706901116523,
+          "RMSE": 0.006913562247063965
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m1_half_ulp_last_scale0",
+      "M": 1,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.00035515364963200426,
+          "MERE": 0.0003551536496320042,
+          "RMSE": 0.003175313503280819
+        },
+        "benchmark_metrics": {
+          "MARE": 0.00035515364963200426,
+          "MERE": 0.0003551536496320042,
+          "RMSE": 0.003175313503280819
+        },
+        "ratios": {
+          "MARE": 0.09091933430579309,
+          "MERE": 0.09091933430579308,
+          "RMSE": 0.8128802568398896
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 4.719669739451003e-08,
+          "MERE": 4.719669739451003e-08,
+          "RMSE": 4.219703519936502e-07
+        },
+        "benchmark_metrics": {
+          "MARE": 4.719669739451003e-08,
+          "MERE": 4.719669739451003e-08,
+          "RMSE": 4.219703519936502e-07
+        },
+        "ratios": {
+          "MARE": 0.0007732706901116523,
+          "MERE": 0.0007732706901116523,
+          "RMSE": 0.006913562247063965
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m1_half_ulp_dispersed_scale0",
+      "M": 1,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.00035515364963200426,
+          "MERE": 0.0003551536496320042,
+          "RMSE": 0.003175313503280819
+        },
+        "benchmark_metrics": {
+          "MARE": 0.00035515364963200426,
+          "MERE": 0.0003551536496320042,
+          "RMSE": 0.003175313503280819
+        },
+        "ratios": {
+          "MARE": 0.09091933430579309,
+          "MERE": 0.09091933430579308,
+          "RMSE": 0.8128802568398896
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 1.538636182141493e-07,
+          "MERE": 1.538636182141493e-07,
+          "RMSE": 1.3756446683999002e-06
+        },
+        "benchmark_metrics": {
+          "MARE": 1.538636182141493e-07,
+          "MERE": 1.538636182141493e-07,
+          "RMSE": 1.3756446683999002e-06
+        },
+        "ratios": {
+          "MARE": 0.002520901520820622,
+          "MERE": 0.002520901520820622,
+          "RMSE": 0.022538562247063965
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m1_half_ulp_first_scale-5",
+      "M": 1,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777344,
+          "RMSE": 0.00638446829402728
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777344,
+          "RMSE": 0.00638446829402728
+        },
+        "ratios": {
+          "MARE": 0.24646796855750006,
+          "MERE": 0.2464679685575,
+          "RMSE": 1.0
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 5.749241568000447e-08,
+          "MERE": 5.749241568000447e-08,
+          "RMSE": 1.220013800207198e-05
+        },
+        "benchmark_metrics": {
+          "MARE": 2.0130466491944218e-07,
+          "MERE": 2.0130466491944218e-07,
+          "RMSE": 4.271771612707198e-05
+        },
+        "ratios": {
+          "MARE": 0.0009419557385011932,
+          "MERE": 0.0009419557385011932,
+          "RMSE": 0.19988706102594733
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m1_half_ulp_last_scale-5",
+      "M": 1,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777344,
+          "RMSE": 0.00638446829402728
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777344,
+          "RMSE": 0.00638446829402728
+        },
+        "ratios": {
+          "MARE": 0.24646796855750006,
+          "MERE": 0.2464679685575,
+          "RMSE": 1.0
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 5.749241568000447e-08,
+          "MERE": 5.749241568000447e-08,
+          "RMSE": 1.220013800207198e-05
+        },
+        "benchmark_metrics": {
+          "MARE": 1.4413708939714388e-08,
+          "MERE": 1.4413708939714388e-08,
+          "RMSE": 3.0586510604280193e-06
+        },
+        "ratios": {
+          "MARE": 0.0009419557385011932,
+          "MERE": 0.0009419557385011932,
+          "RMSE": 0.19988706102594733
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m1_half_ulp_dispersed_scale-5",
+      "M": 1,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777344,
+          "RMSE": 0.00638446829402728
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777344,
+          "RMSE": 0.00638446829402728
+        },
+        "ratios": {
+          "MARE": 0.24646796855750006,
+          "MERE": 0.2464679685575,
+          "RMSE": 1.0
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 5.749241568000447e-08,
+          "MERE": 5.749241568000447e-08,
+          "RMSE": 1.220013800207198e-05
+        },
+        "benchmark_metrics": {
+          "MARE": 5.749241568000447e-08,
+          "MERE": 5.749241568000447e-08,
+          "RMSE": 1.220013800207198e-05
+        },
+        "ratios": {
+          "MARE": 0.0009419557385011932,
+          "MERE": 0.0009419557385011932,
+          "RMSE": 0.19988706102594733
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m1_quarter_ulp_first",
+      "M": 1,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0003569173923457285,
+          "MERE": 0.00035691739234572855,
+          "RMSE": 0.0031910881846553
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0003569173923457285,
+          "MERE": 0.00035691739234572855,
+          "RMSE": 0.0031910881846553
+        },
+        "ratios": {
+          "MARE": 0.0913708524405065,
+          "MERE": 0.09137085244050651,
+          "RMSE": 0.8169185752717568
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 9.61617327254622e-08,
+          "MERE": 9.61617327254622e-08,
+          "RMSE": 8.597523564191079e-07
+        },
+        "benchmark_metrics": {
+          "MARE": 9.61617327254622e-08,
+          "MERE": 9.61617327254622e-08,
+          "RMSE": 8.597523564191079e-07
+        },
+        "ratios": {
+          "MARE": 0.0015755138289739728,
+          "MERE": 0.0015755138289739728,
+          "RMSE": 0.014086182607570663
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m33_half_ulp_first_scale0",
+      "M": 33,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.00035515364963200426,
+          "MERE": 0.0003551536496320042,
+          "RMSE": 0.003175313503280819
+        },
+        "benchmark_metrics": {
+          "MARE": 0.00035515364963200426,
+          "MERE": 0.0003551536496320042,
+          "RMSE": 0.003175313503280819
+        },
+        "ratios": {
+          "MARE": 0.09091933430579309,
+          "MERE": 0.09091933430579308,
+          "RMSE": 0.8128802568398896
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 4.719669739451003e-08,
+          "MERE": 4.719669739451003e-08,
+          "RMSE": 4.219703519936502e-07
+        },
+        "benchmark_metrics": {
+          "MARE": 2.605305390337886e-07,
+          "MERE": 2.605305390337886e-07,
+          "RMSE": 2.32931898480615e-06
+        },
+        "ratios": {
+          "MARE": 0.0007732706901116523,
+          "MERE": 0.0007732706901116523,
+          "RMSE": 0.006913562247063965
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m33_half_ulp_last_scale0",
+      "M": 33,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.00035515364963200426,
+          "MERE": 0.0003551536496320042,
+          "RMSE": 0.003175313503280819
+        },
+        "benchmark_metrics": {
+          "MARE": 0.00035515364963200426,
+          "MERE": 0.0003551536496320042,
+          "RMSE": 0.003175313503280819
+        },
+        "ratios": {
+          "MARE": 0.09091933430579309,
+          "MERE": 0.09091933430579308,
+          "RMSE": 0.8128802568398896
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 4.719669739451003e-08,
+          "MERE": 4.719669739451003e-08,
+          "RMSE": 4.219703519936502e-07
+        },
+        "benchmark_metrics": {
+          "MARE": 4.719669739451003e-08,
+          "MERE": 4.719669739451003e-08,
+          "RMSE": 4.219703519936502e-07
+        },
+        "ratios": {
+          "MARE": 0.0007732706901116523,
+          "MERE": 0.0007732706901116523,
+          "RMSE": 0.006913562247063965
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m33_half_ulp_dispersed_scale0",
+      "M": 33,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.00035515364963200426,
+          "MERE": 0.0003551536496320042,
+          "RMSE": 0.003175313503280819
+        },
+        "benchmark_metrics": {
+          "MARE": 0.00035515364963200426,
+          "MERE": 0.0003551536496320042,
+          "RMSE": 0.003175313503280819
+        },
+        "ratios": {
+          "MARE": 0.09091933430579309,
+          "MERE": 0.09091933430579308,
+          "RMSE": 0.8128802568398896
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 1.538636182141493e-07,
+          "MERE": 1.538636182141493e-07,
+          "RMSE": 1.3756446683999002e-06
+        },
+        "benchmark_metrics": {
+          "MARE": 1.538636182141493e-07,
+          "MERE": 1.538636182141493e-07,
+          "RMSE": 1.3756446683999002e-06
+        },
+        "ratios": {
+          "MARE": 0.002520901520820622,
+          "MERE": 0.002520901520820622,
+          "RMSE": 0.022538562247063965
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m33_half_ulp_first_scale-5",
+      "M": 33,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777345,
+          "RMSE": 0.00638446829402728
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777345,
+          "RMSE": 0.00638446829402728
+        },
+        "ratios": {
+          "MARE": 0.24646796855750006,
+          "MERE": 0.24646796855750003,
+          "RMSE": 1.0
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 5.749241568000447e-08,
+          "MERE": 5.749241568000447e-08,
+          "RMSE": 1.220013800207198e-05
+        },
+        "benchmark_metrics": {
+          "MARE": 2.0130466491944218e-07,
+          "MERE": 2.0130466491944218e-07,
+          "RMSE": 4.271771612707198e-05
+        },
+        "ratios": {
+          "MARE": 0.0009419557385011932,
+          "MERE": 0.0009419557385011932,
+          "RMSE": 0.19988706102594733
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m33_half_ulp_last_scale-5",
+      "M": 33,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777345,
+          "RMSE": 0.00638446829402728
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777345,
+          "RMSE": 0.00638446829402728
+        },
+        "ratios": {
+          "MARE": 0.24646796855750006,
+          "MERE": 0.24646796855750003,
+          "RMSE": 1.0
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 5.749241568000447e-08,
+          "MERE": 5.749241568000447e-08,
+          "RMSE": 1.220013800207198e-05
+        },
+        "benchmark_metrics": {
+          "MARE": 1.4413708939714388e-08,
+          "MERE": 1.4413708939714388e-08,
+          "RMSE": 3.0586510604280193e-06
+        },
+        "ratios": {
+          "MARE": 0.0009419557385011932,
+          "MERE": 0.0009419557385011932,
+          "RMSE": 0.19988706102594733
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m33_half_ulp_dispersed_scale-5",
+      "M": 33,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777345,
+          "RMSE": 0.00638446829402728
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777345,
+          "RMSE": 0.00638446829402728
+        },
+        "ratios": {
+          "MARE": 0.24646796855750006,
+          "MERE": 0.24646796855750003,
+          "RMSE": 1.0
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 5.749241568000447e-08,
+          "MERE": 5.749241568000447e-08,
+          "RMSE": 1.220013800207198e-05
+        },
+        "benchmark_metrics": {
+          "MARE": 5.749241568000447e-08,
+          "MERE": 5.749241568000447e-08,
+          "RMSE": 1.220013800207198e-05
+        },
+        "ratios": {
+          "MARE": 0.0009419557385011932,
+          "MERE": 0.0009419557385011932,
+          "RMSE": 0.19988706102594733
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m33_quarter_ulp_first",
+      "M": 33,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0003569173923457285,
+          "MERE": 0.00035691739234572855,
+          "RMSE": 0.0031910881846553
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0003569173923457285,
+          "MERE": 0.00035691739234572855,
+          "RMSE": 0.0031910881846553
+        },
+        "ratios": {
+          "MARE": 0.0913708524405065,
+          "MERE": 0.09137085244050651,
+          "RMSE": 0.8169185752717568
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 9.61617327254622e-08,
+          "MERE": 9.61617327254622e-08,
+          "RMSE": 8.597523564191079e-07
+        },
+        "benchmark_metrics": {
+          "MARE": 9.61617327254622e-08,
+          "MERE": 9.61617327254622e-08,
+          "RMSE": 8.597523564191079e-07
+        },
+        "ratios": {
+          "MARE": 0.0015755138289739728,
+          "MERE": 0.0015755138289739728,
+          "RMSE": 0.014086182607570663
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m65_half_ulp_first_scale0",
+      "M": 65,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.00035515364963200426,
+          "MERE": 0.0003551536496320042,
+          "RMSE": 0.003175313503280819
+        },
+        "benchmark_metrics": {
+          "MARE": 0.00035515364963200426,
+          "MERE": 0.0003551536496320042,
+          "RMSE": 0.003175313503280819
+        },
+        "ratios": {
+          "MARE": 0.09091933430579309,
+          "MERE": 0.09091933430579308,
+          "RMSE": 0.8128802568398896
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 4.719669739451003e-08,
+          "MERE": 4.719669739451003e-08,
+          "RMSE": 4.219703519936502e-07
+        },
+        "benchmark_metrics": {
+          "MARE": 2.605305390337886e-07,
+          "MERE": 2.605305390337886e-07,
+          "RMSE": 2.32931898480615e-06
+        },
+        "ratios": {
+          "MARE": 0.0007732706901116523,
+          "MERE": 0.0007732706901116523,
+          "RMSE": 0.006913562247063965
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m65_half_ulp_last_scale0",
+      "M": 65,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.00035515364963200426,
+          "MERE": 0.0003551536496320042,
+          "RMSE": 0.003175313503280819
+        },
+        "benchmark_metrics": {
+          "MARE": 0.00035515364963200426,
+          "MERE": 0.0003551536496320042,
+          "RMSE": 0.003175313503280819
+        },
+        "ratios": {
+          "MARE": 0.09091933430579309,
+          "MERE": 0.09091933430579308,
+          "RMSE": 0.8128802568398896
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 4.719669739451003e-08,
+          "MERE": 4.719669739451003e-08,
+          "RMSE": 4.219703519936502e-07
+        },
+        "benchmark_metrics": {
+          "MARE": 4.719669739451003e-08,
+          "MERE": 4.719669739451003e-08,
+          "RMSE": 4.219703519936502e-07
+        },
+        "ratios": {
+          "MARE": 0.0007732706901116523,
+          "MERE": 0.0007732706901116523,
+          "RMSE": 0.006913562247063965
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m65_half_ulp_dispersed_scale0",
+      "M": 65,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.00035515364963200426,
+          "MERE": 0.0003551536496320042,
+          "RMSE": 0.003175313503280819
+        },
+        "benchmark_metrics": {
+          "MARE": 0.00035515364963200426,
+          "MERE": 0.0003551536496320042,
+          "RMSE": 0.003175313503280819
+        },
+        "ratios": {
+          "MARE": 0.09091933430579309,
+          "MERE": 0.09091933430579308,
+          "RMSE": 0.8128802568398896
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 1.538636182141493e-07,
+          "MERE": 1.538636182141493e-07,
+          "RMSE": 1.3756446683999002e-06
+        },
+        "benchmark_metrics": {
+          "MARE": 1.538636182141493e-07,
+          "MERE": 1.538636182141493e-07,
+          "RMSE": 1.3756446683999002e-06
+        },
+        "ratios": {
+          "MARE": 0.002520901520820622,
+          "MERE": 0.002520901520820622,
+          "RMSE": 0.022538562247063965
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m65_half_ulp_first_scale-5",
+      "M": 65,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777345,
+          "RMSE": 0.00638446829402728
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777345,
+          "RMSE": 0.00638446829402728
+        },
+        "ratios": {
+          "MARE": 0.24646796855750006,
+          "MERE": 0.24646796855750003,
+          "RMSE": 1.0
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 5.749241568000447e-08,
+          "MERE": 5.749241568000446e-08,
+          "RMSE": 1.220013800207198e-05
+        },
+        "benchmark_metrics": {
+          "MARE": 2.0130466491944218e-07,
+          "MERE": 2.013046649194422e-07,
+          "RMSE": 4.271771612707198e-05
+        },
+        "ratios": {
+          "MARE": 0.0009419557385011932,
+          "MERE": 0.0009419557385011931,
+          "RMSE": 0.19988706102594733
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m65_half_ulp_last_scale-5",
+      "M": 65,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777345,
+          "RMSE": 0.00638446829402728
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777345,
+          "RMSE": 0.00638446829402728
+        },
+        "ratios": {
+          "MARE": 0.24646796855750006,
+          "MERE": 0.24646796855750003,
+          "RMSE": 1.0
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 5.749241568000447e-08,
+          "MERE": 5.749241568000446e-08,
+          "RMSE": 1.220013800207198e-05
+        },
+        "benchmark_metrics": {
+          "MARE": 1.4413708939714388e-08,
+          "MERE": 1.441370893971439e-08,
+          "RMSE": 3.0586510604280193e-06
+        },
+        "ratios": {
+          "MARE": 0.0009419557385011932,
+          "MERE": 0.0009419557385011931,
+          "RMSE": 0.19988706102594733
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m65_half_ulp_dispersed_scale-5",
+      "M": 65,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777345,
+          "RMSE": 0.00638446829402728
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777345,
+          "RMSE": 0.00638446829402728
+        },
+        "ratios": {
+          "MARE": 0.24646796855750006,
+          "MERE": 0.24646796855750003,
+          "RMSE": 1.0
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 5.749241568000447e-08,
+          "MERE": 5.749241568000446e-08,
+          "RMSE": 1.220013800207198e-05
+        },
+        "benchmark_metrics": {
+          "MARE": 5.749241568000447e-08,
+          "MERE": 5.749241568000446e-08,
+          "RMSE": 1.220013800207198e-05
+        },
+        "ratios": {
+          "MARE": 0.0009419557385011932,
+          "MERE": 0.0009419557385011931,
+          "RMSE": 0.19988706102594733
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "original",
+      "case": "m65_quarter_ulp_first",
+      "M": 65,
+      "D": 20480,
+      "optimized": false,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0003569173923457285,
+          "MERE": 0.00035691739234572855,
+          "RMSE": 0.0031910881846553
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0003569173923457285,
+          "MERE": 0.00035691739234572855,
+          "RMSE": 0.0031910881846553
+        },
+        "ratios": {
+          "MARE": 0.0913708524405065,
+          "MERE": 0.09137085244050651,
+          "RMSE": 0.8169185752717568
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 9.61617327254622e-08,
+          "MERE": 9.616173272546222e-08,
+          "RMSE": 8.597523564191077e-07
+        },
+        "benchmark_metrics": {
+          "MARE": 9.61617327254622e-08,
+          "MERE": 9.616173272546222e-08,
+          "RMSE": 8.597523564191077e-07
+        },
+        "ratios": {
+          "MARE": 0.0015755138289739728,
+          "MERE": 0.001575513828973973,
+          "RMSE": 0.014086182607570661
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "stress",
+      "case": "m2048_half_ulp_first_scale-5",
+      "M": 2048,
+      "D": 20480,
+      "optimized": true,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777344,
+          "RMSE": 0.00638446829402728
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777344,
+          "RMSE": 0.00638446829402728
+        },
+        "ratios": {
+          "MARE": 0.24646796855750006,
+          "MERE": 0.2464679685575,
+          "RMSE": 1.0
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 5.749241568000447e-08,
+          "MERE": 5.749241568000448e-08,
+          "RMSE": 1.220013800207198e-05
+        },
+        "benchmark_metrics": {
+          "MARE": 2.0130466491944218e-07,
+          "MERE": 2.0130466491944215e-07,
+          "RMSE": 4.271771612707198e-05
+        },
+        "ratios": {
+          "MARE": 0.0009419557385011932,
+          "MERE": 0.0009419557385011934,
+          "RMSE": 0.19988706102594733
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "stress",
+      "case": "m2048_half_ulp_last_scale-5",
+      "M": 2048,
+      "D": 20480,
+      "optimized": true,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777344,
+          "RMSE": 0.00638446829402728
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777344,
+          "RMSE": 0.00638446829402728
+        },
+        "ratios": {
+          "MARE": 0.24646796855750006,
+          "MERE": 0.2464679685575,
+          "RMSE": 1.0
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 5.749241568000447e-08,
+          "MERE": 5.749241568000448e-08,
+          "RMSE": 1.220013800207198e-05
+        },
+        "benchmark_metrics": {
+          "MARE": 1.4413708939714388e-08,
+          "MERE": 1.4413708939714385e-08,
+          "RMSE": 3.0586510604280184e-06
+        },
+        "ratios": {
+          "MARE": 0.0009419557385011932,
+          "MERE": 0.0009419557385011934,
+          "RMSE": 0.19988706102594733
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "stress",
+      "case": "m2048_half_ulp_dispersed_scale-5",
+      "M": 2048,
+      "D": 20480,
+      "optimized": true,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777344,
+          "RMSE": 0.00638446829402728
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777344,
+          "RMSE": 0.00638446829402728
+        },
+        "ratios": {
+          "MARE": 0.24646796855750006,
+          "MERE": 0.2464679685575,
+          "RMSE": 1.0
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 5.749241568000447e-08,
+          "MERE": 5.749241568000448e-08,
+          "RMSE": 1.220013800207198e-05
+        },
+        "benchmark_metrics": {
+          "MARE": 5.749241568000447e-08,
+          "MERE": 5.749241568000448e-08,
+          "RMSE": 1.220013800207198e-05
+        },
+        "ratios": {
+          "MARE": 0.0009419557385011932,
+          "MERE": 0.0009419557385011934,
+          "RMSE": 0.19988706102594733
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "stress",
+      "case": "m4096_half_ulp_first_scale-5",
+      "M": 4096,
+      "D": 20480,
+      "optimized": true,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777344,
+          "RMSE": 0.006384468294027284
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777344,
+          "RMSE": 0.006384468294027284
+        },
+        "ratios": {
+          "MARE": 0.24646796855750006,
+          "MERE": 0.2464679685575,
+          "RMSE": 1.0
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 5.749241568000447e-08,
+          "MERE": 5.749241568000448e-08,
+          "RMSE": 1.220013800207198e-05
+        },
+        "benchmark_metrics": {
+          "MARE": 2.0130466491944218e-07,
+          "MERE": 2.0130466491944215e-07,
+          "RMSE": 4.271771612707198e-05
+        },
+        "ratios": {
+          "MARE": 0.0009419557385011932,
+          "MERE": 0.0009419557385011934,
+          "RMSE": 0.19988706102594733
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "stress",
+      "case": "m4096_half_ulp_last_scale-5",
+      "M": 4096,
+      "D": 20480,
+      "optimized": true,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777344,
+          "RMSE": 0.006384468294027284
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777344,
+          "RMSE": 0.006384468294027284
+        },
+        "ratios": {
+          "MARE": 0.24646796855750006,
+          "MERE": 0.2464679685575,
+          "RMSE": 1.0
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 5.749241568000447e-08,
+          "MERE": 5.749241568000448e-08,
+          "RMSE": 1.220013800207198e-05
+        },
+        "benchmark_metrics": {
+          "MARE": 1.4413708939714388e-08,
+          "MERE": 1.4413708939714385e-08,
+          "RMSE": 3.0586510604280184e-06
+        },
+        "ratios": {
+          "MARE": 0.0009419557385011932,
+          "MERE": 0.0009419557385011934,
+          "RMSE": 0.19988706102594733
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    },
+    {
+      "group": "stress",
+      "case": "m4096_half_ulp_dispersed_scale-5",
+      "M": 4096,
+      "D": 20480,
+      "optimized": true,
+      "Y": {
+        "output": "Y",
+        "dtype_threshold_key": "bfloat16",
+        "actual_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777344,
+          "RMSE": 0.006384468294027284
+        },
+        "benchmark_metrics": {
+          "MARE": 0.0009627655021777346,
+          "MERE": 0.0009627655021777344,
+          "RMSE": 0.006384468294027284
+        },
+        "ratios": {
+          "MARE": 0.24646796855750006,
+          "MERE": 0.2464679685575,
+          "RMSE": 1.0
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "rstd": {
+        "output": "rstd",
+        "dtype_threshold_key": "float32",
+        "actual_metrics": {
+          "MARE": 5.749241568000447e-08,
+          "MERE": 5.749241568000448e-08,
+          "RMSE": 1.220013800207198e-05
+        },
+        "benchmark_metrics": {
+          "MARE": 5.749241568000447e-08,
+          "MERE": 5.749241568000448e-08,
+          "RMSE": 1.220013800207198e-05
+        },
+        "ratios": {
+          "MARE": 0.0009419557385011932,
+          "MERE": 0.0009419557385011934,
+          "RMSE": 0.19988706102594733
+        },
+        "small_error_count": {
+          "actual": 0,
+          "benchmark": 0,
+          "ratio": 0.0
+        },
+        "nonfinite": {
+          "total": 0,
+          "errors": 0,
+          "warnings": 0
+        },
+        "pass": true
+      },
+      "pass": true
+    }
+  ]
+}

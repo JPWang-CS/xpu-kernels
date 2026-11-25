@@ -38,13 +38,13 @@ def main() -> int:
     parser.add_argument("--device", choices=("cuda", "npu"), required=True)
     parser.add_argument("--shape", default="16x4096")
     parser.add_argument("--dtype", choices=sorted(_DTYPES), default="bfloat16")
-    parser.add_argument("--implementation", choices=("cuda", "triton", "ascendc"))
+    parser.add_argument("--implementation", choices=("cuda", "triton", "auto", "native", "optimized", "ascendc"))
     args = parser.parse_args()
     rows, width = (int(part) for part in args.shape.split("x", 1))
     records = run_benchmark(
         args.device, [(rows, width)], warmup=5, batches=10, iterations_per_batch=10,
         dtypes=(args.dtype,), check_correctness=False, include_native_baseline=False,
-        implementations=(args.implementation or ("cuda" if args.device == "cuda" else "ascendc"),),
+        implementations=(args.implementation or ("cuda" if args.device == "cuda" else "auto"),),
     )
     for record in records:
         print(json.dumps(record, sort_keys=True))

@@ -51,7 +51,15 @@ python -m xpu_kernels.cli bench --device npu --native-reference \
 
 可用 `--shapes 128x4096,129x4097` 指定 RMSNorm shape，用 `--dtypes bfloat16` 限定精度。未指定 `--native-reference` 时，库实现复用预分配输出；指定后，CUDA C++、Triton、单算子拼接和原生实现均按每次调用分配输出。结果默认写入 `results/benchmarks/`，也可用 `--output` 指定路径。benchmark 使用当前框架 stream 上的设备 Event，记录每批样本及中位数。Event 区间包含 CPU 提交间隙。
 
-GPU BF16 实测包含 48 个 shape 与 CUDA C++、Triton、PyTorch 单算子拼接、PyTorch 原生 RMSNorm 四种实现，共 192 条记录。四种实现均通过对应正确性检查，并在每次调用中分配输出；单算子拼接同时创建中间张量。原始记录见 [rmsnorm-gpu-mainline.jsonl](../results/benchmarks/rmsnorm-gpu-mainline.jsonl)。
+RMSNorm 计算顺序已统一为 FP32 归一化、乘权重、最后转换输出精度。历史记录保留各自的数值约定；新记录通过 `numerical_contract` 区分，不与旧约定自动比较。目标 NPU shape 可单独测量：
+
+```bash
+python -m xpu_kernels.cli bench --device npu --native-reference \
+  --implementations optimized --shapes 2048x20480,4096x20480 \
+  --dtypes bfloat16 --warmup 20 --batches 7 --iterations-per-batch 100
+```
+
+这里的原生基线是测试时 CANN 包中的 `torch_npu.npu_rms_norm`。性能测试前，优化实现的 `Y` 与 `rstd` 须分别通过精度标准 2.1：使用相同输入的 FP64 参考值和真实 GPU 结果进行双标杆比较。
 
 mHC GPU 与 NPU benchmark 覆盖相同的 16 个 shape、dtype 和输入分布；两台设备分别生成张量，使用相同测试种子，不共享同一份设备输入。GPU 测量 TileKernels；NPU 对照 CANN 原生与优化实现。GPU `auto`、`optimized`、`tilelang` 均选择 TileKernels 路径，输出均在每次调用中分配；NPU 两种实现同样每次调用分配四个输出。两端使用预热 20 次、10 批、每批 50 次：
 

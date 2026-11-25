@@ -14,6 +14,22 @@ The original Cube computation and fused Vector implementation are retained. Inte
 
 The public Python API, independent FP64 equations, CLI and tests are project code. Supported shapes and validation results are documented in [the operator guide](docs/operators/mhc-post-backward.md).
 
+## Ascend C RMSNorm row-retain implementation
+
+`kernels/include/xpu_kernels/rms_norm_cann/` contains the exact-scope Ascend C
+optimization implementation and its shared CANN reduction dependencies. The
+CANN native baseline remains `torch_npu.npu_rms_norm`; the public upstream
+operator reference is [CANN ops-nn/norm/rms_norm](https://gitcode.com/cann/ops-nn/tree/master/norm/rms_norm).
+The optimized implementation is selected by `XPU_RMS_ROW_SLOTS` through
+`kernels/include/xpu_kernels/rms_norm_cann_ascend.hpp` and exports the common
+DeepJIT symbol `xpu_rms_norm_cann`.
+
+The copied Ascend C files retain the **CANN Open Software License Agreement
+Version 2.0**. The complete license text is included at
+[kernels/include/xpu_kernels/rms_norm_cann/LICENSE](kernels/include/xpu_kernels/rms_norm_cann/LICENSE).
+No CANN SDK or OPP files are vendored; official Ascend C system headers remain
+external build dependencies.
+
 ## DeepSeek TileKernels GPU mHC post backward
 
 `src/xpu_kernels/backends/_tilekernels/post_cuda.py` is the upstream GPU implementation from [deepseek-ai/TileKernels](https://github.com/deepseek-ai/TileKernels/blob/main/tile_kernels/mhc/post_cuda.py). It is retained under the MIT License, copyright 2026 DeepSeek, included alongside the file. The xpu-kernels adapter flattens token axes, reorders inputs/outputs, and selects the upstream thread/block parameters. The kernel computation is unchanged and uses TileLang to generate CUDA code.

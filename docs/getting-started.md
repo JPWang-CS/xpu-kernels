@@ -44,7 +44,9 @@ python -m xpu_kernels.cli example --device npu --operator rms_norm --shape 128x4
 python -m xpu_kernels.cli example --device npu --operator mhc_post_backward --shape 2x1024x4x6144
 ```
 
-RMSNorm 使用 Ascend C。NPU 构建需要 Bisheng、`ld.lld`、`adv_api`、支持 C++ `<format>` 的工具链、`Python.h` 和 elfutils 开发头文件；可用 `CXX` 指定项目选用的编译器，`check-env` 会显示实际检测结果。mHC 当前设备实现面向 Ascend 950；输入条件和原生/优化路径见 [mHC 算子说明](operators/mhc-post-backward.md)。首次调用通过 DeepJIT 编译 NPU kernel，后续调用复用缓存，无需将算子安装到公共 OPP。
+RMSNorm 默认按输入选择实现：目标范围使用优化内核，其余调用 CANN 主线原生算子；`implementation="native"` 固定使用原生算子。优化范围与用法见 [RMSNorm](operators/rmsnorm.md)。
+
+NPU 优化内核通过 DeepJIT 编译，构建需要 Bisheng、`ld.lld`、`adv_api`、支持 C++ `<format>` 的工具链、`Python.h` 和 elfutils 开发头文件；可用 `CXX` 指定编译器。首次调用编译并缓存内核，无需安装到公共 OPP。mHC 的输入条件和实现选择见 [mHC 算子说明](operators/mhc-post-backward.md)。
 
 ## Python API
 
@@ -74,4 +76,4 @@ mkdir -p "$XPU_KERNELS_CACHE_DIR"
 
 ## 设备验证记录
 
-0.3.0 GPU wheel 已完成独立安装与设备运行，RMSNorm 的三种精度及 mHC BF16 示例通过。源码测试 46 项通过、5 项跳过，mHC 测试覆盖四个完整输出、非默认 stream 和输出复用。[验证报告](validation.md)保留测试范围和环境信息；[Benchmark 与 Profiler](benchmarking.md)提供复现命令。
+各版本的测试范围和环境信息保存在[验证报告](validation.md)。[Benchmark 与 Profiler](benchmarking.md)提供当前代码的正确性、计时与采集命令。

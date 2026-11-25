@@ -51,7 +51,7 @@ def _parser() -> argparse.ArgumentParser:
     bench.add_argument("--iterations-per-batch", type=int, default=10)
     bench.add_argument("--warmup", type=int, default=5)
     bench.add_argument("--output", type=Path)
-    bench.add_argument("--implementations", help="GPU: cuda,triton,torch; NPU: ascendc")
+    bench.add_argument("--implementations", help="GPU: cuda,triton,torch; NPU: auto,native,optimized,ascendc")
     bench.add_argument("--dtypes", default="float32,bfloat16,float16")
     bench.add_argument("--native-reference", action="store_true")
     profile = commands.add_parser("profile", help="run an independent profiler workload")
@@ -267,7 +267,7 @@ def _profile(args) -> int:
         raise RuntimeError(f"profiler executable {args.tool!r} was not found")
     from .profile_workload import check_profile_case
 
-    implementation = args.implementation or ("cuda" if args.device == "cuda" else "ascendc")
+    implementation = args.implementation or ("cuda" if args.device == "cuda" else "auto")
     check_profile_case(args.device, args.shape[0], args.dtype, implementation)
     output = args.output if args.output.is_absolute() else _root() / args.output
     output.mkdir(parents=True, exist_ok=True)
@@ -292,8 +292,8 @@ def main(argv: list[str] | None = None) -> int:
         if getattr(args, "operator", None) == "mhc_post_backward":
             from .mhc_workload import run_cli
             return run_cli(args)
-        if getattr(args,"implementation",None) in ("auto","native","optimized","tilelang"):
-            raise ValueError("auto/native/optimized/tilelang implementations apply to mhc_post_backward")
+        if getattr(args, "implementation", None) == "tilelang":
+            raise ValueError("tilelang implementation applies to mhc_post_backward")
         if args.command in ("example", "profile") and args.shape is None:
             args.shape = [(4, 4096)] if args.command == "example" else [(16, 4096)]
         if args.command == "check-env":

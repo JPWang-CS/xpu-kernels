@@ -1,21 +1,22 @@
 from __future__ import annotations
 
 from typing import Any
+import math
 
 
 SUPPORTED_DTYPES = {"torch.float32", "torch.float16", "torch.bfloat16"}
 
 
-def validate_rms_norm(x: Any, weight: Any, eps: float, out: Any | None) -> Any:
+def validate_rms_norm(x: Any, weight: Any, eps: float, out: Any | None, *, allow_noncontiguous: bool = False) -> Any:
     import torch
 
     if not isinstance(x, torch.Tensor) or not isinstance(weight, torch.Tensor):
         raise TypeError("x and weight must be torch.Tensor objects")
     if x.ndim < 1 or x.shape[-1] < 1:
         raise ValueError("x must have at least one dimension and a non-empty last dimension")
-    if not x.is_contiguous():
+    if not allow_noncontiguous and not x.is_contiguous():
         raise ValueError("x must be contiguous")
-    if not weight.is_contiguous() or weight.ndim != 1:
+    if weight.ndim != 1 or (not allow_noncontiguous and not weight.is_contiguous()):
         raise ValueError("weight must be a contiguous 1-D tensor")
     if str(x.dtype) not in SUPPORTED_DTYPES:
         raise TypeError(f"unsupported input dtype: {x.dtype}")
@@ -25,7 +26,7 @@ def validate_rms_norm(x: Any, weight: Any, eps: float, out: Any | None) -> Any:
         raise ValueError("weight and x must be on the same device")
     if weight.numel() != x.shape[-1]:
         raise ValueError("weight length must equal the last dimension of x")
-    if not isinstance(eps, (float, int)) or eps <= 0:
+    if not isinstance(eps, (float, int)) or not math.isfinite(eps) or eps <= 0:
         raise ValueError("eps must be a positive number")
     if out is not None:
         if not isinstance(out, torch.Tensor):
