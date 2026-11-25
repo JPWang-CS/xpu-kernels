@@ -14,7 +14,7 @@ The homepage uses a compact masthead and two combined performance figures. The a
 
 `docs/assets/benchmark-mhc.png` compares NPU CANN native and xpu-kernels optimized kernel duration with GPU TileLang kernel duration. NPU values use msprof `Task Duration(us)`; GPU values use Nsight Compute `gpu__time_duration.sum`. The charts use the same four shapes, dtype and input distribution on each device, with independently generated device inputs.
 
-Both figures use absolute microseconds and linear axes starting at zero. RMSNorm has two panels with a common 0..240 μs scale; mHC retains four independently scaled shape panels. RMSNorm Event call intervals and mHC kernel duration appear in separate figures because they measure different scopes. Exact selections and values are recorded in `docs/assets/performance-chart-data.json`; the preparation tool's `--check` mode verifies the manifest against current benchmark records. New figures are produced with ImageGen and visually checked against these values.
+Both figures use the same Python/Matplotlib renderer and `STYLE` configuration: identical fonts, colors, panel widths, two-column layout, zero-based linear axes, units, legends and two-decimal labels. RMSNorm has two shape panels and mHC has four; additional panels extend the figure vertically. Each panel has its own scale, stated in the footer. Event call intervals and kernel durations are labeled separately. Exact values and style are saved in `docs/assets/performance-chart-data.json` and each PNG's metadata. The renderer's `--check` mode verifies both against current records. New operators add data definitions and reuse this same plotting function.
 
 ## Reading order and references
 

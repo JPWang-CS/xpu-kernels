@@ -1,5 +1,28 @@
 {
-  "schema_version": 3,
+  "schema_version": 4,
+  "style": {
+    "columns": 2,
+    "width_inches": 14,
+    "panel_height_inches": 2.6,
+    "panel_gap_inches": 1.0,
+    "header_inches": 1.95,
+    "footer_inches": 0.5,
+    "dpi": 160,
+    "background": "#FAFCFE",
+    "text": "#0F172A",
+    "muted": "#64748B",
+    "grid": "#E2E8F0",
+    "title_size": 24,
+    "panel_title_size": 14,
+    "label_size": 12.5,
+    "value_decimals": 2,
+    "bar_width": 0.6,
+    "colors": {
+      "native": "#94A3B8",
+      "optimized": "#0D9488",
+      "gpu": "#2563EB"
+    }
+  },
   "sources": [
     "results/benchmarks/mhc-post-backward-msprof.jsonl",
     "results/benchmarks/mhc-post-backward-gpu-ncu.jsonl",

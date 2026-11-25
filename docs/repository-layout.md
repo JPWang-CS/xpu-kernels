@@ -43,7 +43,7 @@ Ascend C 每个算子只有一个设备目录，内部按功能平铺。RMSNorm 
 2. 在 `<operator>.py` 建立公开接口和参数检查，按实际设备添加同名后端。Ascend C 使用公共加载器及本算子的 `kernel.hpp`，同时在 `bindings.cpp` 注册接口、在 `_ascend.py` 的源文件列表加入 Host 文件；CUDA C++、Triton、TileLang 按各自工具链构建。
 3. 在 `tests/test_<operator>.py` 覆盖对齐、非对齐、小输入和模型输入，检查错误参数及非默认 stream。把采集负载接入 `<operator>_workload.py` 与现有 CLI。
 4. 在 `docs/operators/<operator>.md` 写清公式、接口、原生实现、优化范围和执行命令。在包入口导出 API 后运行结构检查、正确性、安装包检查，再运行 benchmark 与 profiler。
-5. 实测结果沿用 `results/benchmarks/` 的 JSONL 格式。保留设备型号、shape、dtype、实现、数值合同、计时方式与逐批样本；对照表由这些记录生成。首页只放已验证的优化图与算子入口。
+5. 实测结果沿用 `results/benchmarks/` 的 JSONL 格式。保留设备型号、shape、dtype、实现、数值合同、计时方式与逐批样本；对照表由这些记录生成。首页只放已验证的优化图与算子入口。性能图统一由 `tools/render_homepage_charts.py` 生成，每个算子单独出图，共用一套字体、配色、面板、坐标轴和两位小数格式；新增算子只增加数据定义。
 
 ```bash
 python tools/check_repository_layout.py

@@ -1,8 +1,0 @@
-ImageGen chart brief: RMSNorm
-Wide, restrained professional GitHub README chart; white background.
-Title: RMSNorm. Subtitle: Ascend 950DT · BF16 · Event time.
-Two side-by-side panels, horizontal bars; shared linear x-axis 0..240 μs, ticks 0,60,120,180,240.
-Gray #94A3B8 原生; teal #0D9488 优化; labels at bar ends. No GPU series.
-Panel 2048 × 20480: 原生 83.16 μs; 优化 48.53 μs.
-Panel 4096 × 20480: 原生 203.16 μs; 优化 106.04 μs.
-Footer: 单位：μs/次 · 越低越快. Inspect text, units, and bar geometry before publishing.
