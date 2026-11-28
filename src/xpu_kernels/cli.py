@@ -62,7 +62,7 @@ def _parser() -> argparse.ArgumentParser:
     profile.add_argument("--implementation", choices=("cuda", "triton", "ascendc", "auto", "native", "optimized", "tilelang"))
     profile.add_argument("--dtype", choices=("float32", "bfloat16", "float16"), default="bfloat16")
     for command in (build, example, test, bench, profile):
-        command.add_argument("--operator", choices=("rms_norm", "mhc_post_backward"), default="rms_norm")
+        command.add_argument("--operator", choices=("rms_norm", "mhc_post_backward", 'fused_quant_payload', 'fused_send_slots', 'fused_owner_combine'), default="rms_norm")
     return parser
 
 
@@ -289,6 +289,9 @@ def _profile(args) -> int:
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
+        if getattr(args, "operator", None) in ('fused_quant_payload', 'fused_send_slots', 'fused_owner_combine'):
+            import importlib
+            return importlib.import_module('xpu_kernels.' + args.operator + '_workload').run_cli(args)
         if getattr(args, "operator", None) == "mhc_post_backward":
             from .mhc_post_backward_workload import run_cli
             return run_cli(args)

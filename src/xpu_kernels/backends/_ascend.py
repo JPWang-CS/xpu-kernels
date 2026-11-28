@@ -66,7 +66,10 @@ def _load_extension():
     return load(
         name="xpu_kernels_ascend",
         sources=[str(source), str(root / "csrc" / "ascend" / "rms_norm.cpp"),
-                 str(root / "csrc" / "ascend" / "mhc_post_backward.cpp")],
+                 str(root / "csrc" / "ascend" / "mhc_post_backward.cpp"),
+                 str(root / "csrc" / "ascend" / "fused_quant_payload.cpp"),
+                 str(root / "csrc" / "ascend" / "fused_send_slots.cpp"),
+                 str(root / "csrc" / "ascend" / "fused_owner_combine.cpp")],
         extra_cflags=["-std=c++20", "-O3", "-fPIC", "-DDJ_DISABLE_GIL=1"],
         extra_include_paths=[str(path) for path in includes],
         extra_ldflags=ldflags,

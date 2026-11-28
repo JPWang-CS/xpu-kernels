@@ -9,7 +9,7 @@ description = "GPU and Ascend NPU kernels with numerical references and reproduc
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0 AND MIT AND LicenseRef-CANN-Open-Software-2.0"
-license-files = ["LICENSE", "kernels/include/xpu_kernels/mhc_post_backward/LICENSE", "kernels/include/xpu_kernels/rms_norm/LICENSE", "third-party/deep-jit/LICENSE", "src/xpu_kernels/backends/_tilekernels/LICENSE"]
+license-files = ["LICENSE", "kernels/include/xpu_kernels/mhc_post_backward/LICENSE", "kernels/include/xpu_kernels/rms_norm/LICENSE", "kernels/include/xpu_kernels/fused_quant_payload/LICENSE", "kernels/include/xpu_kernels/fused_send_slots/LICENSE", "kernels/include/xpu_kernels/fused_owner_combine/LICENSE", "third-party/deep-jit/LICENSE", "src/xpu_kernels/backends/_tilekernels/LICENSE"]
 dependencies = ["torch", "ninja>=1.11"]
 
 [project.optional-dependencies]

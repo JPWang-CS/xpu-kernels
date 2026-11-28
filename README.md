@@ -37,6 +37,11 @@ y = rms_norm(x, weight)
 
 **mHC Post Backward** 计算残差混合过程的四个梯度，提供 GPU 与昇腾 NPU 实现。见 [mHC Post Backward 完整文档](docs/operators/mhc_post_backward/README.md)。
 
+**固定容量 MoE 融合内核** 提供量化打包、专家结果槽位整理和逐 token 加权合并：
+[fused_quant_payload](docs/operators/fused_quant_payload/README.md) ·
+[fused_send_slots](docs/operators/fused_send_slots/README.md) ·
+[fused_owner_combine](docs/operators/fused_owner_combine/README.md)。支持固定 BF16 小批量 NPU 路径；接口范围、原实验精度结论及迁移验证状态见各算子文档。
+
 ## 仓库结构
 
 ```text

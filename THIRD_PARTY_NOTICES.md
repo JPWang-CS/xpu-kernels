@@ -33,3 +33,16 @@ external build dependencies.
 ## DeepSeek TileKernels GPU mHC post backward
 
 `src/xpu_kernels/backends/_tilekernels/post_cuda.py` is the upstream GPU implementation from [deepseek-ai/TileKernels](https://github.com/deepseek-ai/TileKernels/blob/main/tile_kernels/mhc/post_cuda.py). It is retained under the MIT License, copyright 2026 DeepSeek, included alongside the file. The xpu-kernels adapter flattens token axes, reorders inputs/outputs, and selects the upstream thread/block parameters. The kernel computation is unchanged and uses TileLang to generate CUDA code.
+
+
+## Fixed-capacity MoE Ascend C kernels
+
+`fused_quant_payload`, `fused_send_slots`, and `fused_owner_combine` retain
+the Ascend C computation from the fixed-capacity two-rank MoE experiment.
+These custom MoE device files and their integration are project code,
+distributed under the repository Apache-2.0 license included in each kernel directory. Integration replaces OPP tiling-pointer
+plumbing with DeepJIT scalar arguments; no SDK headers, compiled binaries,
+model weights, service configuration, or third-party model code is vendored.
+Python APIs, independent references, tests and the composition example are
+project code. The composition takes an existing process group and expert
+callback; it does not install a model plugin or change a shared environment.
