@@ -24,6 +24,58 @@ STYLE = {"columns": 2, "width_inches": 14, "panel_height_inches": 2.6,
          "value_decimals": 2, "bar_width": 0.60, "colors": COLORS}
 
 
+def _positive_finite(value, field):
+    value = float(value)
+    if not math.isfinite(value) or value <= 0:
+        raise ValueError(f"{field} must be positive and finite")
+    return value
+
+
+def moe_measurements():
+    path = ROOT / "results/benchmarks/moe-fixed-capacity-historical.jsonl"
+    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    if len(rows) != 5:
+        raise ValueError("MoE historical chart requires five cases")
+    required_scope = {
+        "record_kind": "historical_model_device_interval",
+        "operator_group": "fixed_capacity_moe",
+        "hardware": "2 x Ascend 910B3",
+        "timing_scope": "whole_model_device_business_span_slowest_rank",
+        "comparison_scope": "historical combined deployment; not independent kernel timing or migrated JIT measurement",
+        "precision_21": "NOT_RUN",
+        "suite_precision": "UNRESOLVED_S7_TOKEN_MISMATCH",
+        "formal_windows_per_arm": 1,
+    }
+    cases = []
+    seen = set()
+    for row in rows:
+        for key, expected in required_scope.items():
+            if row.get(key) != expected:
+                raise ValueError(f"invalid MoE {key}: {row.get(key)!r}")
+        case = row.get("case")
+        if not isinstance(case, str) or not case or case in seen:
+            raise ValueError("MoE cases must be unique non-empty strings")
+        seen.add(case)
+        if row.get("dtype") != "bfloat16" or row.get("execution_mode") != "FULL_DECODE_ONLY":
+            raise ValueError("unexpected MoE dtype or execution mode")
+        if row.get("model") != "Pangu 92B" or row.get("expert_weight_dtype") != "int8":
+            raise ValueError("unexpected MoE model or expert weight dtype")
+        if row.get("hidden_shape") != [16, 2560] or row.get("top_k") != 8:
+            raise ValueError("unexpected MoE hidden shape or top_k")
+        if row.get("concurrency") != 1 or row.get("parallelism") != {"tp": 2, "dp": 1, "ep": 2, "mtp": 3}:
+            raise ValueError("unexpected MoE workload scope")
+        if not isinstance(row.get("input_tokens"), int) or not isinstance(row.get("output_tokens"), int):
+            raise ValueError("MoE token counts must be integers")
+        baseline = _positive_finite(row.get("baseline_us"), "baseline_us") / 1_000_000
+        candidate = _positive_finite(row.get("candidate_us"), "candidate_us") / 1_000_000
+        cases.append({"case": case, "case_label": f"输入 {row['input_tokens']} · 输出 {row['output_tokens']}",
+                      "seconds": [baseline, candidate]})
+    selected = [case for case in ("S3", "S6", "S8", "S9") if case in seen]
+    if len(selected) != 4:
+        raise ValueError("MoE chart requires S3, S6, S8 and S9")
+    return [next(item for item in cases if item["case"] == case) for case in selected]
+
+
 def chart_data():
     mhc, _ = mhc_records()
     gpu = load("mhc-post-backward-gpu-ncu.jsonl", "Nsight Compute gpu__time_duration.sum", "mhc_post_backward")
@@ -46,9 +98,18 @@ def chart_data():
               {**shared, "id": "rmsnorm", "title": "RMSNorm", "method": "BF16 · Event call time · μs",
                "series": [{"implementation": "native", "label": "NPU 950DT（原生）", "color": COLORS["native"]},
                           {"implementation": "optimized", "label": "NPU 950DT（优化）", "color": COLORS["optimized"]}],
-               "cases": measurements()}]
-    return {"schema_version": 4, "style": STYLE, "sources": ["results/benchmarks/mhc-post-backward-msprof.jsonl",
-            "results/benchmarks/mhc-post-backward-gpu-ncu.jsonl", "results/benchmarks/rmsnorm-npu-cann.jsonl"],
+               "cases": measurements()},
+              {"dtype": "bfloat16", "metric": "absolute_latency_s", "lower_is_better": True,
+               "id": "moe", "title": "MoE · 固定容量路径",
+               "method": "Pangu 92B · 2×910B3 · 历史整网设备区间 · s · n=1",
+               "note": "组合方案；长输出一致性问题待排查；非新 JIT 复测",
+               "footer": "各面板独立刻度 · s/次 · 越低越快", "value_key": "seconds", "unit": "s",
+               "series": [{"implementation": "native", "label": "原生路径", "color": COLORS["native"]},
+                          {"implementation": "optimized", "label": "组合路径", "color": COLORS["optimized"]}],
+               "cases": moe_measurements()}]
+    return {"schema_version": 5, "style": STYLE, "sources": ["results/benchmarks/mhc-post-backward-msprof.jsonl",
+            "results/benchmarks/mhc-post-backward-gpu-ncu.jsonl", "results/benchmarks/rmsnorm-npu-cann.jsonl",
+            "results/benchmarks/moe-fixed-capacity-historical.jsonl"],
             "charts": charts}
 
 
@@ -75,13 +136,14 @@ def plot(data, font_path=None):
     plt.rcParams.update({"font.family": [family, "DejaVu Sans"], "font.size": style["label_size"],
                          "axes.unicode_minus": False})
     for chart in data["charts"]:
+        header_inches = style["header_inches"] + (0.35 if chart.get("note") else 0)
         rows = math.ceil(len(chart["cases"]) / style["columns"])
-        height = (style["header_inches"] + style["footer_inches"]
+        height = (header_inches + style["footer_inches"]
                   + rows * style["panel_height_inches"] + (rows-1)*style["panel_gap_inches"])
         fig, axes = plt.subplots(rows, style["columns"], squeeze=False,
                                  figsize=(style["width_inches"], height), dpi=style["dpi"],
                                  facecolor=style["background"])
-        fig.subplots_adjust(left=.075, right=.975, top=1-style["header_inches"]/height,
+        fig.subplots_adjust(left=.075, right=.975, top=1-header_inches/height,
                             bottom=style["footer_inches"]/height, wspace=.22,
                             hspace=style["panel_gap_inches"]/style["panel_height_inches"])
         fig.text(.075, 1-.43/height, chart["title"], fontsize=style["title_size"],
@@ -98,15 +160,20 @@ def plot(data, font_path=None):
                 ax.spines[side].set_visible(False)
             ax.spines["bottom"].set_color("#CBD5E1")
             ax.tick_params(axis="both", length=0, labelcolor=style["muted"])
-            bars = ax.bar(range(len(chart["series"])), case["latency_us"], width=style["bar_width"],
+            value_key = chart.get("value_key", "latency_us")
+            values = case[value_key]
+            bars = ax.bar(range(len(chart["series"])), values, width=style["bar_width"],
                           color=[s["color"] for s in chart["series"]], zorder=3)
-            ax.set_ylim(0, max(case["latency_us"])*1.26)
+            ax.set_ylim(0, max(values)*1.26)
             ax.set_xticks([])
             ax.yaxis.set_major_locator(MaxNLocator(nbins=4, min_n_ticks=3))
-            ax.set_ylabel("μs", color=style["muted"])
-            ax.set_title(" × ".join(map(str, case["shape"])), loc="left", pad=12,
+            ax.set_ylabel(chart.get("unit", "μs"), color=style["muted"])
+            case_label = case.get("case_label")
+            if case_label is None:
+                case_label = " × ".join(map(str, case["shape"]))
+            ax.set_title(case_label, loc="left", pad=12,
                          fontsize=style["panel_title_size"], color=style["text"])
-            for bar, value in zip(bars, case["latency_us"]):
+            for bar, value in zip(bars, values):
                 if bar.get_height() != value:
                     raise ValueError("bar geometry differs from benchmark data")
                 ax.annotate(f"{value:.{style['value_decimals']}f}",
@@ -114,7 +181,10 @@ def plot(data, font_path=None):
                             textcoords="offset points", ha="center", va="bottom", color=style["text"])
         for ax in list(axes.flat)[len(chart["cases"]):]:
             ax.set_visible(False)
-        fig.text(.075, .13/height, "各面板独立刻度 · μs/次 · 越低越快", fontsize=11, color=style["muted"])
+        fig.text(.075, .13/height, chart.get("footer", "各面板独立刻度 · μs/次 · 越低越快"),
+                 fontsize=11, color=style["muted"])
+        if chart.get("note"):
+            fig.text(.075, 1-1.58/height, chart["note"], fontsize=10.5, color=style["muted"])
         fig.savefig(ASSETS / f"benchmark-{chart['id']}.png", dpi=style["dpi"],
                     facecolor=fig.get_facecolor(), metadata={"Software": "xpu-kernels shared Matplotlib renderer",
                     "BenchmarkData": json.dumps({"style": style, "chart": chart}, ensure_ascii=False, sort_keys=True)})
@@ -138,7 +208,8 @@ def main():
     else:
         plot(data, args.font)
         MANIFEST.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
-    print("Two charts: six shape panels and sixteen matched measurements; data check PASS")
+    print(f"Rendered {len(data['charts'])} charts ({', '.join(chart['id'] for chart in data['charts'])}); "
+          f"{sum(len(chart['cases']) for chart in data['charts'])} panels; data check PASS")
 
 
 if __name__ == "__main__":

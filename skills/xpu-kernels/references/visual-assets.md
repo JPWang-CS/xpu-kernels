@@ -8,10 +8,18 @@ Prompt: A restrained academic/open-source kernel library masthead, near-white ba
 
 ## Performance charts
 
-Performance charts use the shared Python/Matplotlib renderer `tools/render_homepage_charts.py`. The user selected this route to keep a fixed style across operators. Both figures use the same font, colors, panel dimensions, zero-based axes, labels and two-decimal number format. The renderer saves exact benchmark values and style in `performance-chart-data.json` and PNG metadata. Its `--check` mode checks the data and saved image metadata; visual review checks spacing and readability.
+Performance charts use the shared Python/Matplotlib renderer `tools/render_homepage_charts.py`. The user selected this route to keep a fixed style across operators. All figures use the same font, colors, panel dimensions, zero-based axes, labels and two-decimal number format. The renderer saves exact benchmark values and style in `performance-chart-data.json` and PNG metadata. Its `--check` mode checks the data and saved image metadata; visual review checks spacing and readability.
 
 `benchmark-rmsnorm.png` uses two vertical-bar panels: gray native and teal optimized. Ascend 950DT BF16 Event call times are 83.16/48.53 μs for 2048×20480 and 203.16/106.04 μs for 4096×20480. Both implementations allocate Y/rstd per call. Historical GPU values use the prior numerical contract and are retained in detailed historical tables.
 
 `benchmark-mhc.png` uses four panels from the same renderer and preserves its exact source data. It shows GPU TileLang NCU kernel duration alongside NPU CANN native and optimized msprof `Task Duration(us)`. It compares the same four selected shapes, dtype and input distribution on each device; each device generates its own inputs. Event call intervals and kernel duration remain distinct metrics.
 
 [Rendering and validation](../../../docs/benchmarking.md#5-记录与图表) · [Homepage structure and chart design](homepage-style.md)
+
+
+`benchmark-moe.png` uses the same four-panel bar-chart style, with seconds
+rather than microseconds. It displays archived combined-deployment intervals,
+not individual-kernel or new JIT measurements. The source JSONL preserves the
+original decimal microseconds, one-window sampling and unresolved precision
+status. Case labels show input/output token counts; the chart explains its
+historical scope and long-output consistency issue.

@@ -5,8 +5,10 @@ import argparse
 import json
 import math
 from pathlib import Path
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
 BEGIN = "<!-- BEGIN homepage-performance -->"
 END = "<!-- END homepage-performance -->"
 
@@ -79,7 +81,17 @@ def homepage():
 
 ![mHC Post Backward — NPU 与 GPU](docs/assets/benchmark-mhc.png)
 
-[mHC Post Backward 完整文档](docs/operators/mhc_post_backward/README.md)"""
+[mHC Post Backward 完整文档](docs/operators/mhc_post_backward/README.md)
+
+<a id="moe-performance"></a>
+
+### MoE · 固定容量路径
+
+![MoE — 原部署与组合路径的历史设备区间](docs/assets/benchmark-moe.png)
+
+盘古 92B、双 Ascend 910B3 的历史整网组合实验，每臂各测一次；包含通信、融合内核与图适配，长输出一致性问题待排查。
+
+[MoE 设计与历史测量](docs/operators/fused_owner_combine/optimization.md)"""
 
 
 def legacy_documents():

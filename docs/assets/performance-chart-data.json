@@ -1,5 +1,5 @@
 {
-  "schema_version": 4,
+  "schema_version": 5,
   "style": {
     "columns": 2,
     "width_inches": 14,
@@ -26,7 +26,8 @@
   "sources": [
     "results/benchmarks/mhc-post-backward-msprof.jsonl",
     "results/benchmarks/mhc-post-backward-gpu-ncu.jsonl",
-    "results/benchmarks/rmsnorm-npu-cann.jsonl"
+    "results/benchmarks/rmsnorm-npu-cann.jsonl",
+    "results/benchmarks/moe-fixed-capacity-historical.jsonl"
   ],
   "charts": [
     {
@@ -142,6 +143,64 @@
           "latency_us": [
             203.16235542297363,
             106.03671550750732
+          ]
+        }
+      ]
+    },
+    {
+      "dtype": "bfloat16",
+      "metric": "absolute_latency_s",
+      "lower_is_better": true,
+      "id": "moe",
+      "title": "MoE · 固定容量路径",
+      "method": "Pangu 92B · 2×910B3 · 历史整网设备区间 · s · n=1",
+      "note": "组合方案；长输出一致性问题待排查；非新 JIT 复测",
+      "footer": "各面板独立刻度 · s/次 · 越低越快",
+      "value_key": "seconds",
+      "unit": "s",
+      "series": [
+        {
+          "implementation": "native",
+          "label": "原生路径",
+          "color": "#94A3B8"
+        },
+        {
+          "implementation": "optimized",
+          "label": "组合路径",
+          "color": "#0D9488"
+        }
+      ],
+      "cases": [
+        {
+          "case": "S3",
+          "case_label": "输入 188 · 输出 1024",
+          "seconds": [
+            72.037833596,
+            22.108768173
+          ]
+        },
+        {
+          "case": "S6",
+          "case_label": "输入 4096 · 输出 2048",
+          "seconds": [
+            143.250904973,
+            48.11749248700001
+          ]
+        },
+        {
+          "case": "S8",
+          "case_label": "输入 188 · 输出 4096",
+          "seconds": [
+            272.88481841900006,
+            91.251585246
+          ]
+        },
+        {
+          "case": "S9",
+          "case_label": "输入 15999 · 输出 128",
+          "seconds": [
+            29.681284052000002,
+            20.727650038
           ]
         }
       ]

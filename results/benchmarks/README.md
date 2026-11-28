@@ -27,3 +27,20 @@ The historical `mhc-post-backward-history.jsonl` and `mhc-post-backward-a1b-pair
 `mhc-post-backward-gpu-ncu.jsonl`: 16 per-shape NCU summaries for `mhc_post_bwd_cuda_kernel`, using kernel replay and `gpu__time_duration.sum`; each summary contains five measured samples after 20 warmups. [mhc-gpu-tilelang.csv](../../docs/performance/data/mhc-gpu-tilelang.csv) preserves all 400 warmup and measured launches across the 16 shapes. The NCU correctness samples and matching Event results passed.
 
 The absolute-latency figures are [RMSNorm](../../docs/assets/benchmark-rmsnorm.png) and [mHC Post Backward](../../docs/assets/benchmark-mhc.png). Their independent panels compare matching shape, dtype and input distribution on each device; each device generates its own random inputs. The [historical RMSNorm tables](../../docs/performance/README.md) and [mHC measurements](../../docs/operators/mhc_post_backward/optimization.md) contain the full cross-device matrices. Historical benchmark JSONL files above remain unchanged.
+
+## Historical MoE deployment intervals
+
+`moe-fixed-capacity-historical.jsonl` contains five archived comparisons from a
+two-card Ascend 910B3 Pangu 92B deployment with INT8 expert weights and BF16 hidden states. These records use
+`record_kind=historical_model_device_interval`, separate from the operator
+benchmark schemas above. Each arm has one formal window. The durations are
+whole-model device business intervals from official msprof task-time data,
+taking the slower rank; the original decimal microseconds are retained.
+
+The candidate combines fixed-capacity communication, three fused kernels, a
+dedicated expert-parallel group and graph adaptation. These are not independent
+kernel timings or measurements of the migrated DeepJIT entry. Per-case output
+evidence is retained, while `suite_precision=UNRESOLVED_S7_TOKEN_MISMATCH`
+preserves the unresolved long-output failure. These rows are excluded from the
+operator historical-best matcher and do not claim precision 2.1 acceptance.
+The homepage converts selected durations to seconds with the shared renderer.

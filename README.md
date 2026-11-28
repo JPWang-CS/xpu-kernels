@@ -2,7 +2,7 @@
 
 <img src="docs/assets/xpu-kernels-masthead.png" alt="xpu-kernels — GPU / NPU Kernel Library" width="640" />
 
-[安装与使用](#quick-start) &nbsp;·&nbsp; [算子](#operators) &nbsp;·&nbsp; [性能](#benchmarks) &nbsp;·&nbsp; [复现](docs/benchmarking.md)
+[安装与使用](#quick-start) &nbsp;·&nbsp; [算子](#operators) &nbsp;·&nbsp; [MoE](#moe) &nbsp;·&nbsp; [性能](#benchmarks) &nbsp;·&nbsp; [复现](docs/benchmarking.md)
 
 </div>
 
@@ -33,14 +33,25 @@ y = rms_norm(x, weight)
 
 ## 算子
 
-**RMSNorm** 沿最后一维归一化并应用权重，计算顺序与 CANN 主线一致。NPU 按输入选择主线原生或优化实现，GPU 提供 CUDA 与 Triton 实现。见 [RMSNorm 完整文档](docs/operators/rms_norm/README.md)。
+### RMSNorm
 
-**mHC Post Backward** 计算残差混合过程的四个梯度，提供 GPU 与昇腾 NPU 实现。见 [mHC Post Backward 完整文档](docs/operators/mhc_post_backward/README.md)。
+沿最后一维归一化并应用权重，计算顺序与 CANN 主线一致。NPU 按输入选择主线原生或优化实现，GPU 提供 CUDA 与 Triton 实现。见 [RMSNorm 完整文档](docs/operators/rms_norm/README.md)。
 
-**固定容量 MoE 融合内核** 提供量化打包、专家结果槽位整理和逐 token 加权合并：
-[fused_quant_payload](docs/operators/fused_quant_payload/README.md) ·
-[fused_send_slots](docs/operators/fused_send_slots/README.md) ·
-[fused_owner_combine](docs/operators/fused_owner_combine/README.md)。支持固定 BF16 小批量 NPU 路径；接口范围、原实验精度结论及迁移验证状态见各算子文档。
+### mHC Post Backward
+
+计算残差混合过程的四个梯度，提供 GPU 与昇腾 NPU 实现。见 [mHC Post Backward 完整文档](docs/operators/mhc_post_backward/README.md)。
+
+<a id="moe"></a>
+
+### 固定容量 MoE 融合内核
+
+固定容量 MoE 路径提供量化打包、专家结果槽位整理和逐 token 加权合并三个 API：
+
+- [`fused_quant_payload`](docs/operators/fused_quant_payload/README.md)
+- [`fused_send_slots`](docs/operators/fused_send_slots/README.md)
+- [`fused_owner_combine`](docs/operators/fused_owner_combine/README.md)
+
+支持固定 BF16 小批量 NPU 路径；接口范围、原实验精度结论及迁移验证状态见各算子文档。
 
 ## 仓库结构
 
@@ -80,6 +91,16 @@ docs/operators/
 ![mHC Post Backward — NPU 与 GPU](docs/assets/benchmark-mhc.png)
 
 [mHC Post Backward 完整文档](docs/operators/mhc_post_backward/README.md)
+
+<a id="moe-performance"></a>
+
+### MoE · 固定容量路径
+
+![MoE — 原部署与组合路径的历史设备区间](docs/assets/benchmark-moe.png)
+
+盘古 92B、双 Ascend 910B3 的历史整网组合实验，每臂各测一次；包含通信、融合内核与图适配，长输出一致性问题待排查。
+
+[MoE 设计与历史测量](docs/operators/fused_owner_combine/optimization.md)
 <!-- END homepage-performance -->
 
 ## License
