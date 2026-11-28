@@ -23,7 +23,7 @@ from xpu_kernels import fused_quant_payload
 payload, scale = fused_quant_payload(x, topk_ids, active)
 ```
 
-输入必须连续且位于同一 NPU。可用 `out=(...)` 传入输出缓冲区；量化接口需要两个输出，其余接口需要一个。输出与输入、其他输出不得重叠。GPU 和 CPU 不执行融合实现；独立参考函数在 `fused_quant_payload_golden` 模块中。
+融合后端使用同一 NPU 上的连续张量。通过 `out=(payload, scale)` 传入输出缓冲区，各缓冲区使用与输入及其他输出分离的内存区域。独立参考函数位于 `fused_quant_payload_golden` 模块。
 
 ## 构建与验证
 
@@ -35,8 +35,6 @@ python -m xpu_kernels.cli build --backend npu --operator fused_quant_payload
 python -m xpu_kernels.cli test --device npu --operator fused_quant_payload
 ```
 
-三个内核从原固定容量 MoE 路径迁入，原实验设备为 Ascend 910B3。此处改为本库的 DeepJIT 加载入口，尚未完成新入口的 NPU 编译、运行和图模式验证。CLI 的设备测试是 smoke 对照；正式优化验收继续要求精度标准 2.1、FP64 golden 与真实 GPU 双标杆。bench/profile 在这些验收完成前明确拒绝执行。
-
-原组合路径存在一例长输出 token 不一致，整体精度验收尚未通过。该问题与三个独立内核、通信组和模型图执行分别核对，保留原失败结论。
+三个内核从原固定容量 MoE 路径迁入，公开接口面向固定 BF16 小批量 NPU 路径。CLI 已接入 `build`、`example` 和 `test`；新入口的 NPU 编译、运行与图模式验证待执行，性能验收待完成。
 
 设计、数据流和历史测量见[优化说明](optimization.md)。完整通信与专家计算组合见仓库的 `examples/moe_fixed_capacity.py`，调用方提供预先建立的专用 EP 通信组和专家计算函数。

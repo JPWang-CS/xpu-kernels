@@ -1,7 +1,6 @@
 """Independent CPU/device reference for the fixed INT8 payload layout.
 
-Float64 division rounded to FP32 is the mathematical reference, not a claim
-that a newly compiled scalar refinement is bitwise equivalent on all inputs.
+The mathematical reference uses Float64 division followed by an FP32 cast.
 """
 def fused_quant_payload_golden(x, topk_ids, active):
     import torch

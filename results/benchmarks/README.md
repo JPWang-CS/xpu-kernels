@@ -16,7 +16,7 @@ Only sanitized, compact JSONL and this schema note are intended for Git. Profile
 
 `mhc-post-backward-msprof.jsonl`: the same 16 shapes and two implementations, official msprof MIX_AIC Task Duration(us). Each row retains five post-warmup samples and links a compact public CSV preserving all25 launches, Task IDs, stream, shape and source row. Public performance tables use these kernel medians.
 
-The historical `mhc-post-backward-history.jsonl` and `mhc-post-backward-a1b-paired.jsonl` describe earlier private implementations; their predecessor columns are not the CANN mainline baseline. The initial migration Event file is retained as a separate installation/run record.
+The historical `mhc-post-backward-history.jsonl` and `mhc-post-backward-a1b-paired.jsonl` describe earlier private implementations; their predecessor columns record those earlier routes. The CANN mainline baseline is recorded in the mainline files below. The initial migration Event file is retained as a separate installation/run record.
 
 ## GPU mainline records
 
@@ -38,9 +38,10 @@ whole-model device business intervals from official msprof task-time data,
 taking the slower rank; the original decimal microseconds are retained.
 
 The candidate combines fixed-capacity communication, three fused kernels, a
-dedicated expert-parallel group and graph adaptation. These are not independent
-kernel timings or measurements of the migrated DeepJIT entry. Per-case output
-evidence is retained, while `suite_precision=UNRESOLVED_S7_TOKEN_MISMATCH`
-preserves the unresolved long-output failure. These rows are excluded from the
-operator historical-best matcher and do not claim precision 2.1 acceptance.
+dedicated expert-parallel group and graph adaptation. The timing object is the
+whole-model device business interval; individual-kernel and migrated DeepJIT
+measurements use their own records. Per-case output evidence is retained, and
+`suite_precision=UNRESOLVED_S7_TOKEN_MISMATCH` records the unresolved
+long-output failure. These rows remain outside the operator historical-best
+matcher; `precision_21=NOT_RUN` records the current acceptance state.
 The homepage converts selected durations to seconds with the shared renderer.

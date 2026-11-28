@@ -73,7 +73,7 @@ op.Init(grad_y, x, h_res, h_out, h_post, grad_x, grad_h_res, grad_h_out, grad_h_
 op.Process();
 ```
 
-上面 `IS_HRES=true` 表示当前分支需要 `h_res` 和 `grad_x`，但它不是把 `grad_x` 交给 Cube；`AiInfraMhcPostBackwardKernelOptimized::Process` 在 AIC 上调用 `ProcessCube()`，在 AIV 上调用 `ProcessVecByHeads()`，两个执行单元协同完成各自的输出。
+上面 `IS_HRES=true` 表示当前分支需要 `h_res` 和 `grad_x`。`AiInfraMhcPostBackwardKernelOptimized::Process` 在 AIC 上调用 `ProcessCube()`，在 AIV 上调用 `ProcessVecByHeads()`：AIC 计算 `grad_h_res`，AIV 计算 `grad_x`、`grad_h_out` 和 `grad_h_post`，两个执行单元协同完成四个输出。
 
 Cube 的内层代码明确调用 `Mmad`：
 
@@ -210,7 +210,7 @@ TQue<QuePosition::VECOUT, 1> gradHPostQueue_;
 TQue<QuePosition::VECOUT, 1> packedGradYQueue_;
 ```
 
-`DataCopyIn` 使用 `DataCopyPad` 处理最后一个不满 `tileD` 的尾块；`DataCopyOut` 只写回有效 `size`，不把 padding 写进逻辑输出。`ProcessVec` 在下一次计算前预取下一块或下一组 token，之后以 cross-core flag 等待 Cube 对相应 L1 buffer 的消费状态。这样做的重点是减少 GM 往返和等待空洞，而不是改变四个反向公式。
+`DataCopyIn` 使用 `DataCopyPad` 处理最后一个不满 `tileD` 的尾块；`DataCopyOut` 只写回有效 `size`，逻辑输出保持原尺寸。`ProcessVec` 在下一次计算前预取下一块或下一组 token，之后以 cross-core flag 等待 Cube 对相应 L1 buffer 的消费状态。四个反向公式保持不变。
 
 ## 5. 精度语义与取舍
 
@@ -218,7 +218,7 @@ TQue<QuePosition::VECOUT, 1> packedGradYQueue_;
 
 1. `h_res`、`h_post` 和它们的梯度是 FP32；`x`、`grad_y`、`h_out`、`grad_x`、`grad_h_out` 保持输入数据 dtype（FP16 或 BF16）。
 2. Vector 先将输入数据转换为 FP32 寄存器进行乘加，再把 `grad_x`、`grad_h_out` 按公共 API 合同转换回 `T`。Cube 的 L0C 和 `grad_h_res` 使用 FP32。
-3. `grad_h_post` 的长维度归约不是简单地把一个 FP32 累加器反复覆盖。源码为每个 head 保留 64 个和与 64 个 correction，并在最终 `ReduceGradHPostVF` 中合并高位部分、残差和 correction；这是为了在不改变输出 dtype 的前提下减轻长归约误差。
+3. `grad_h_post` 的长维度归约为每个 head 保留 64 个和与 64 个 correction，并在最终 `ReduceGradHPostVF` 中合并高位部分、残差和 correction；这套分层归约在保持输出 dtype 的同时减轻长归约误差。
 
 计算阶段使用 FP32 累加和补偿，最终仍遵守 `grad_x/grad_h_out` 为输入 dtype、`grad_h_res/grad_h_post` 为 FP32 的接口。正确性验收按四个输出分别对照同一输入的独立 FP64 golden。
 

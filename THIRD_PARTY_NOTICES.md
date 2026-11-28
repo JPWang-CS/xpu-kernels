@@ -8,9 +8,9 @@
 
 The NPU implementation under `kernels/include/xpu_kernels/mhc_post_backward/` derives from the `AiInfraMhcPostBackward` implementation in omni-ops, at `training/ascendc/src/ops-transformer/mhc/ai_infra_mhc_post_backward/op_kernel/arch35/`.
 
-Copyright (c) 2026 Huawei Technologies Co., Ltd. These files retain the **CANN Open Software License Agreement Version 2.0**, included at [kernels/include/xpu_kernels/mhc_post_backward/LICENSE](kernels/include/xpu_kernels/mhc_post_backward/LICENSE). They are NPU-specific components, distributed under their own license rather than the repository's Apache-2.0 license.
+Copyright (c) 2026 Huawei Technologies Co., Ltd. These files retain the **CANN Open Software License Agreement Version 2.0**, included at [kernels/include/xpu_kernels/mhc_post_backward/LICENSE](kernels/include/xpu_kernels/mhc_post_backward/LICENSE). These NPU-specific components are distributed under that CANN license.
 
-The original Cube computation and fused Vector implementation are retained. Integration changes use canonical includes for DeepJIT, retain the optimized tiling record, and add `mhc_post_backward_ascend.hpp` as a JIT entry. The latter is distributed under the same CANN license. The host adapter calculates shape/device-dependent launch metadata and uses the current NPU stream. No CANN OPP package installation is required for this JIT path.
+The original Cube computation and fused Vector implementation are retained. Integration changes use canonical includes for DeepJIT, retain the optimized tiling record, and add `mhc_post_backward_ascend.hpp` as a JIT entry. The latter is distributed under the same CANN license. The host adapter calculates shape/device-dependent launch metadata and uses the current NPU stream. DeepJIT compiles and loads this path from the project cache.
 
 The public Python API, independent FP64 equations, CLI and tests are project code. Supported shapes and validation results are documented in [the operator guide](docs/operators/mhc_post_backward/README.md).
 
@@ -27,8 +27,7 @@ DeepJIT symbol `rms_norm`.
 The copied Ascend C files retain the **CANN Open Software License Agreement
 Version 2.0**. The complete license text is included at
 [kernels/include/xpu_kernels/rms_norm/LICENSE](kernels/include/xpu_kernels/rms_norm/LICENSE).
-No CANN SDK or OPP files are vendored; official Ascend C system headers remain
-external build dependencies.
+The installed CANN toolkit provides the external Ascend C system headers and OPP dependencies.
 
 ## DeepSeek TileKernels GPU mHC post backward
 
@@ -41,8 +40,9 @@ external build dependencies.
 the Ascend C computation from the fixed-capacity two-rank MoE experiment.
 These custom MoE device files and their integration are project code,
 distributed under the repository Apache-2.0 license included in each kernel directory. Integration replaces OPP tiling-pointer
-plumbing with DeepJIT scalar arguments; no SDK headers, compiled binaries,
-model weights, service configuration, or third-party model code is vendored.
+plumbing with DeepJIT scalar arguments. The package contains the kernel and
+integration sources; the installed CANN toolkit supplies SDK headers.
 Python APIs, independent references, tests and the composition example are
 project code. The composition takes an existing process group and expert
-callback; it does not install a model plugin or change a shared environment.
+callback supplied by the caller. Model integration and environment setup are
+configured by the application.

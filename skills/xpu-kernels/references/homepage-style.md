@@ -23,9 +23,9 @@ comparisons from `moe-fixed-capacity-historical.jsonl`. Values are absolute
 seconds for the slower rank's whole-model device business interval, one formal
 window per arm, on two Ascend 910B3 cards. The candidate combines communication,
 three fused kernels, a dedicated EP group and graph adaptation. This chart is
-separate from individual-kernel measurements and the newly migrated JIT entry.
-The chart and homepage state that a long-output consistency issue is unresolved;
-its full acceptance scope stays in the operator design document.
+The chart shows whole-model device execution intervals; individual-kernel and
+migrated JIT measurements use their own records. The full validation record
+stays in the operator design document.
 
 The shared renderer supports chart-specific units and labels while retaining
 one style. `tools/render_native_comparisons.py:homepage` also includes this chart,

@@ -17,16 +17,14 @@ AscendC::Mins(workUb, workUb, 127.0f, h);
 
 ![量化打包、固定槽位与加权合并的数据流](figures/dataflow.png)
 
-图中的 K1、K2、K3 是原实验的三个阶段，依次对应 `fused_quant_payload`、`fused_send_slots`、`fused_owner_combine`。图为源码数据流示意，不是硬件采集的流水图。AllGather、原 routing、专家计算和 AllToAll 位于三个接口之间，由组合示例连接。
+图中的 K1、K2、K3 是原实验的三个阶段，依次对应 `fused_quant_payload`、`fused_send_slots`、`fused_owner_combine`。图展示源码数据流；AllGather、原 routing、专家计算和 AllToAll 位于三个接口之间，由组合示例连接。
 
 ## 迁移与数值约定
 
-保留原 Ascend C 计算主体，将 OPP 的 tiling 指针读取改成 DeepJIT 入口参数构造局部 tiling 结构。Host 层验证 shape、dtype、布局、设备和输出别名，并沿用 PyTorch 当前设备与 stream；安装过程不覆盖公共 CANN/OPP。
+迁移保留 Ascend C 计算主体，将 OPP 的 tiling 指针读取改成 DeepJIT 入口参数构造局部 tiling 结构。Host 层验证 shape、dtype、布局、设备和输出别名，并沿用 PyTorch 当前设备与 stream；构建产物和 JIT 缓存写入项目目录。
 
-独立参考用于核对布局与数值。`fused_owner_combine_golden(..., fp64=True)` 另外给出未转 BF16 的 FP64 数学结果；默认参考保留逐槽 FP32 舍入。量化参考以 FP64 除法后转 FP32，不把数学参考和特定设备舍入实现混为同一份代码。正式双标杆结果尚待实际 GPU/NPU 执行。
+独立参考用于核对布局与数值。量化参考以 FP64 除法后转 FP32，设备实现保留既定的舍入和写包顺序。
 
 ## 历史测量范围
 
-原实验把三个融合内核、固定容量集合通信、独立专家并行（EP）通信组和图模式适配一起测量。这些组合结果不代表本接口的独立加速比。原组合的一例长输出 token 差异仍未关闭；迁移没有扩大其精度覆盖。
-
-本库尚无该 JIT 入口的独立性能数据，因此主页不绘制此算子的性能柱状图。
+组合测量与验证状态统一记录在[按 token 加权合并的历史测量](../fused_owner_combine/optimization.md#历史测量范围)和[验证记录](../fused_owner_combine/optimization.md#验证记录)中。

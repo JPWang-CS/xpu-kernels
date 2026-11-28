@@ -25,6 +25,7 @@ class MoEHomepageChartTests(unittest.TestCase):
         chart = next(item for item in data["charts"] if item["id"] == "moe")
         self.assertEqual(chart["value_key"], "seconds")
         self.assertEqual(chart["unit"], "s")
+        self.assertEqual(chart["note"], "固定容量通信 + 三段融合内核 + 独立 EP + 图适配")
         self.assertEqual([case["case"] for case in chart["cases"]], ["S3", "S6", "S8", "S9"])
         self.assertIn("results/benchmarks/moe-fixed-capacity-historical.jsonl", data["sources"])
         self.assertNotIn("D:\\", json.dumps(data, ensure_ascii=False))

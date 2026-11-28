@@ -14,8 +14,8 @@ class HomepageGenerationTests(unittest.TestCase):
         for title in ("### RMSNorm", "### mHC Post Backward", "### MoE · 固定容量路径"):
             self.assertIn(title, generated)
         self.assertIn("docs/assets/benchmark-moe.png", generated)
-        self.assertIn("历史整网组合实验", generated)
-        self.assertIn("长输出一致性问题待排查", generated)
+        self.assertIn("整网设备执行区间", generated)
+        self.assertIn("TP2/DP1/EP2、MTP3", generated)
 
     def test_readme_uses_the_generated_performance_block(self):
         text = (ROOT / "README.md").read_text(encoding="utf-8")

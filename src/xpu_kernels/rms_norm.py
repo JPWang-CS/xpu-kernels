@@ -9,8 +9,7 @@ def rms_norm(x, weight, eps: float = 1e-5, out=None, *, implementation=None):
     CUDA defaults to the native CUDA extension; ``implementation="triton"``
     selects Triton. NPU uses the selected optimization inside its exact scope
     and CANN mainline otherwise. ``implementation="native"`` selects CANN.
-    There is no implicit reference fallback. Use ``rms_norm_golden.rms_norm_golden``
-    explicitly when a reference result is wanted.
+    Independent reference calculations use ``rms_norm_golden.rms_norm_golden``.
     """
     npu_input = getattr(getattr(x, "device", None), "type", None) == "npu"
     torch = validate_rms_norm(x, weight, eps, out, allow_noncontiguous=npu_input)

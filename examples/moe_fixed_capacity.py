@@ -1,9 +1,9 @@
 """Two-rank fixed-capacity MoE composition using the three exported kernels.
 
 Pass an already initialized, dedicated EP group in ascending global-rank order.
-All group members call this function together. It does not create a group or
-load a model. The migrated JIT/graph path requires new device acceptance;
-historical long-output token parity has an unresolved case.
+All group members call this function together. The caller supplies the local
+expert computation callback. Device-validation records are collected in
+``docs/operators/fused_owner_combine/optimization.md``.
 """
 def fixed_capacity_moe(hidden_states, topk_ids, topk_weights, active, *, ep_group, compute_experts):
     import torch

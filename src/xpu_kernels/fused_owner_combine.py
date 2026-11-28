@@ -1,4 +1,4 @@
-"""Fixed-capacity MoE fused_owner_combine; explicit NPU execution, no reference fallback."""
+"""Fixed-capacity MoE fused_owner_combine; fixed-capacity NPU implementation."""
 from ._moe import tensors, outputs, expert_range
 
 def _validate(received_slots, topk_ids, topk_weights, active, *, npu=False):

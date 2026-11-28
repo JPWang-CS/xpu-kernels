@@ -100,7 +100,7 @@ NCU 对所选 CUDA C++、Triton 或 TileLang kernel 采集匹配 launch，使用
 
 ## 5. 记录与图表
 
-benchmark JSONL 保存原始采样和环境信息，目录及字段说明见[记录格式](../results/benchmarks/README.md)。跨版本或不同测量方式的数据分开比较；历史最佳只与匹配的设备、实现、dtype、shape 和测量设置对照。PyTorch golden 用于正确性，不作为性能基线。
+benchmark JSONL 保存原始采样和环境信息，目录及字段说明见[记录格式](../results/benchmarks/README.md)。跨版本或不同测量方式的数据分开比较；历史最佳只与匹配的设备、实现、dtype、shape 和测量设置对照。PyTorch golden 用于数值正确性检查。
 
 性能图从已验证的 JSONL 记录生成，每个算子单独出图，共用字体、配色、面板尺寸和两位小数格式。以下命令在仓库根目录执行：
 

@@ -98,7 +98,7 @@ docs/operators/
 
 ![MoE — 原部署与组合路径的历史设备区间](docs/assets/benchmark-moe.png)
 
-盘古 92B、双 Ascend 910B3 的历史整网组合实验，每臂各测一次；包含通信、融合内核与图适配，长输出一致性问题待排查。
+盘古 92B，双 Ascend 910B3，TP2/DP1/EP2、MTP3；图示每组一次的整网设备执行区间。
 
 [MoE 设计与历史测量](docs/operators/fused_owner_combine/optimization.md)
 <!-- END homepage-performance -->

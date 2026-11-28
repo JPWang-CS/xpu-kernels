@@ -102,7 +102,7 @@ def chart_data():
               {"dtype": "bfloat16", "metric": "absolute_latency_s", "lower_is_better": True,
                "id": "moe", "title": "MoE · 固定容量路径",
                "method": "Pangu 92B · 2×910B3 · 历史整网设备区间 · s · n=1",
-               "note": "组合方案；长输出一致性问题待排查；非新 JIT 复测",
+               "note": "固定容量通信 + 三段融合内核 + 独立 EP + 图适配",
                "footer": "各面板独立刻度 · s/次 · 越低越快", "value_key": "seconds", "unit": "s",
                "series": [{"implementation": "native", "label": "原生路径", "color": COLORS["native"]},
                           {"implementation": "optimized", "label": "组合路径", "color": COLORS["optimized"]}],

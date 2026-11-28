@@ -60,7 +60,7 @@ $$
 grad_x, grad_h_res, grad_h_out, grad_h_post
 ```
 
-`grad_x` 和 `grad_h_out` 使用输入数据 dtype；`grad_h_res` 和 `grad_h_post` 使用 FP32。`out` 可以传入四个连续、形状和 dtype 匹配的输出张量组成的 tuple；输入、输出必须在同一设备上，输出不能与输入或其他输出重叠。独立参考的当前实现见 [mhc_post_backward_golden.py](../../../src/xpu_kernels/mhc_post_backward_golden.py)，公共参数校验和 dispatch 见 [mhc_post_backward.py](../../../src/xpu_kernels/mhc_post_backward.py)。
+`grad_x` 和 `grad_h_out` 使用输入数据 dtype；`grad_h_res` 和 `grad_h_post` 使用 FP32。`out` 可以传入四个连续、形状和 dtype 匹配的输出张量组成的 tuple；输入和输出位于同一设备，输出缓冲区各自占用与输入及其他输出分离的内存区域。独立参考的当前实现见 [mhc_post_backward_golden.py](../../../src/xpu_kernels/mhc_post_backward_golden.py)，公共参数校验和 dispatch 见 [mhc_post_backward.py](../../../src/xpu_kernels/mhc_post_backward.py)。
 
 ## 当前范围与选择规则
 
@@ -90,7 +90,7 @@ grad_x, grad_h_res, grad_h_out, grad_h_post
 | token 数 | `2048 ≤ T ≤ 49152` |
 | 特征宽度 | `D ∈ {2560, 5120, 6144, 7168}` |
 
-范围外的 NPU 输入仍可以使用 `implementation="native"`，或者由 `implementation="auto"` 交给 CANN 主线；这不等于本库优化内核支持范围扩大。当前适配器还会检查设备、连续性、输入输出 shape、FP32 混合权重、输出 dtype、无重叠和 token/D 上限。
+范围外的 NPU 输入使用 `implementation="native"`，或者由 `implementation="auto"` 交给 CANN 主线；本库优化内核继续遵循上表的设备、连续性、输入输出 shape、FP32 混合权重、输出 dtype、无重叠和 token/D 上限。
 
 ## 最小运行示例
 

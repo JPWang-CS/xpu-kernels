@@ -18,8 +18,8 @@ Performance charts use the shared Python/Matplotlib renderer `tools/render_homep
 
 
 `benchmark-moe.png` uses the same four-panel bar-chart style, with seconds
-rather than microseconds. It displays archived combined-deployment intervals,
-not individual-kernel or new JIT measurements. The source JSONL preserves the
-original decimal microseconds, one-window sampling and unresolved precision
-status. Case labels show input/output token counts; the chart explains its
-historical scope and long-output consistency issue.
+rather than microseconds. It displays archived whole-model combined-deployment
+intervals; individual-kernel and new JIT measurements use separate records. The
+source JSONL preserves the original decimal microseconds, one-window sampling
+and precision status. Case labels show input/output token counts and the chart
+states the communication, fused-kernel, EP and graph-adaptation components.

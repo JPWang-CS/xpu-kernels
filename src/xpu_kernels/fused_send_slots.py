@@ -1,4 +1,4 @@
-"""Fixed-capacity MoE fused_send_slots; explicit NPU execution, no reference fallback."""
+"""Fixed-capacity MoE fused_send_slots; fixed-capacity NPU implementation."""
 from ._moe import tensors, outputs, expert_range
 
 def _validate(down_proj, inverse_index, route_ids, active, expert_start, expert_end, *, npu=False):

@@ -1,4 +1,4 @@
-"""Fixed-capacity MoE fused_quant_payload; explicit NPU execution, no reference fallback."""
+"""Fixed-capacity MoE fused_quant_payload; fixed-capacity NPU implementation."""
 from ._moe import tensors, outputs, expert_range
 
 def _validate(x, topk_ids, active, *, npu=False):
